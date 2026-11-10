@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- **Giao diện phải làm đúng theo canvas thiết kế** https://claude.ai/artifact/MBn13iMsr2GcsELrV21kzn (24 artboard). Trước khi dựng một màn, đọc artboard tương ứng và chép bố cục, câu chữ, màu, khoảng cách. Token: indigo `#4F46E5`, indigo đậm `#3730A3`, nền `#F5F6FB`, chữ `#1E1B4B`, chữ phụ `#5B6478`, viền `#E6E8F3`; trạng thái xanh lá `#12803C`, cam `#B45309`, đỏ `#C2261D`; font Be Vietnam Pro.
+- **Giao diện phải làm đúng theo canvas thiết kế** https://claude.ai/artifact/MBn13iMsr2GcsELrV21kzn (24 artboard). Trước khi dựng một màn, đọc artboard tương ứng và chép bố cục, câu chữ, màu, khoảng cách. Phong cách Modern Neo-Widget. Token: nền `#F6F8FC`, chữ `#0F172A`, chữ phụ `#64748B`; thẻ trắng bo 24, viền `#F1F5F9`; đầu trang mờ kính; widget hero tối `#090D16` có quầng sáng; nút chính indigo `#4F46E5`; mục đang chọn `#EEF2FF`; trạng thái emerald (có mặt), amber (đáng ngờ), rose (vắng); mã, giờ, số liệu dùng monospace; font Inter + Material Symbols; điện thoại dùng dock nổi, web dùng sidebar thẻ trắng nổi.
 Giá trị lấy nguyên từ đặc tả (mục 4, 6, 9.4, 9.5); chúng nằm trong `backend/config.yaml`, code không hard-code.
 
 - Thử thách: hết hạn **60 s**; tối đa **5 lượt** (số dòng `challenges`) mỗi (phiên, sinh viên); hành động: `turn_left`, `turn_right`.

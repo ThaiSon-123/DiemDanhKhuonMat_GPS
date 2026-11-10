@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_error.dart';
 import '../../core/session.dart';
 import '../../ui/app_text_field.dart';
-import '../../ui/brand_sheet_layout.dart';
+import '../../ui/neo.dart';
 import '../../ui/theme.dart';
 
 /// Artboard "Chung · Đổi mật khẩu bắt buộc" (DoiMatKhau.dc.html).
@@ -17,11 +17,11 @@ class ChangePasswordPage extends StatefulWidget {
 
 /// Độ mạnh 0–4 cho thước 4 vạch: đủ 8 ký tự, có số, có chữ hoa hoặc ký tự đặc biệt, từ 12 ký tự.
 int passwordStrength(String p) => [
-      p.length >= 8,
-      RegExp(r'\d').hasMatch(p),
-      RegExp(r'[A-Z]|[^A-Za-z0-9]').hasMatch(p),
-      p.length >= 12,
-    ].where((ok) => ok).length;
+  p.length >= 8,
+  RegExp(r'\d').hasMatch(p),
+  RegExp(r'[A-Z]|[^A-Za-z0-9]').hasMatch(p),
+  p.length >= 12,
+].where((ok) => ok).length;
 
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final _old = TextEditingController();
@@ -57,67 +57,139 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     final showMismatch = (_again.text.isNotEmpty || _submitted) && !_matches;
     void refresh(String _) => setState(() {});
 
-    return BrandSheetLayout(
-      header: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(color: AppColors.primarySub, borderRadius: BorderRadius.circular(17)),
-          child: const Icon(Icons.lock_outline, size: 28, color: Color(0xFFC7D2FE)),
-        ),
-        const SizedBox(height: 16),
-        const Text('Đặt mật khẩu mới',
-            style: TextStyle(fontSize: 26, height: 34 / 26, fontWeight: FontWeight.w800, color: Colors.white)),
-        const SizedBox(height: 16),
-        const Text('Bạn đang dùng mật khẩu tạm do khoa cấp. Hãy đặt mật khẩu của riêng bạn để tiếp tục.',
-            style: TextStyle(fontSize: 15, height: 22 / 15, color: AppColors.onPrimaryMuted)),
-      ]),
-      sheet: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        AppTextField(label: 'Mật khẩu tạm', controller: _old, obscure: true, onChanged: refresh),
-        const SizedBox(height: 16),
-        AppTextField(
-          label: 'Mật khẩu mới',
-          controller: _new,
-          obscure: true,
-          onChanged: refresh,
-          below: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              for (var i = 0; i < 4; i++) ...[
-                if (i > 0) const SizedBox(width: 4),
-                Expanded(
-                  child: Container(
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: i < strength ? AppColors.present : AppColors.border,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+    return NeoPage(
+      bottom: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FilledButton(
+            onPressed: _busy ? null : _submit,
+            child: const Text('Lưu mật khẩu'),
+          ),
+          const SizedBox(height: 10),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.devices, size: 15, color: AppColors.textMuted),
+              SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  'Các thiết bị khác đang đăng nhập sẽ bị đăng xuất.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      children: [
+        const HeroCard(
+          emeraldGlow: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Color(0x336366F1),
+                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                  border: Border.fromBorderSide(
+                    BorderSide(color: Color(0x4D818CF8)),
                   ),
                 ),
-              ],
-            ]),
-            const SizedBox(height: 8),
-            Wrap(spacing: 14, runSpacing: 6, children: [
-              _Rule(ok: _longEnough, text: 'Ít nhất 8 ký tự'),
-              _Rule(ok: _differs, text: 'Khác mật khẩu tạm'),
-            ]),
-          ]),
+                child: SizedBox.square(
+                  dimension: 48,
+                  child: Icon(
+                    Icons.lock_reset,
+                    size: 26,
+                    color: Color(0xFFA5B4FC),
+                  ),
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Đặt mật khẩu mới',
+                style: TextStyle(
+                  fontSize: 24,
+                  height: 30 / 24,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.48,
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Bạn đang dùng mật khẩu tạm do khoa cấp. Hãy đặt mật khẩu của riêng bạn để tiếp tục.',
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 20 / 14,
+                  color: AppColors.heroText,
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
-        AppTextField(
-          label: 'Nhập lại mật khẩu mới',
-          controller: _again,
-          obscure: true,
-          onChanged: refresh,
-          onSubmitted: (_) => _submit(),
-          errorText: showMismatch ? 'Hai mật khẩu chưa khớp' : _serverError,
+        NeoCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppTextField(
+                label: 'Mật khẩu tạm',
+                controller: _old,
+                obscure: true,
+                onChanged: refresh,
+              ),
+              const SizedBox(height: 14),
+              AppTextField(
+                label: 'Mật khẩu mới',
+                controller: _new,
+                obscure: true,
+                onChanged: refresh,
+                below: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        for (var i = 0; i < 4; i++) ...[
+                          if (i > 0) const SizedBox(width: 4),
+                          Expanded(
+                            child: Container(
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: i < strength
+                                    ? AppColors.present
+                                    : AppColors.cardBorder,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _Rule(ok: _longEnough, text: 'Ít nhất 8 ký tự'),
+                        _Rule(ok: _differs, text: 'Khác mật khẩu tạm'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              AppTextField(
+                label: 'Nhập lại mật khẩu mới',
+                controller: _again,
+                obscure: true,
+                onChanged: refresh,
+                onSubmitted: (_) => _submit(),
+                errorText: showMismatch
+                    ? 'Hai mật khẩu chưa khớp'
+                    : _serverError,
+              ),
+            ],
+          ),
         ),
-        const Spacer(),
-        const SizedBox(height: 24),
-        FilledButton(onPressed: _busy ? null : _submit, child: const Text('Lưu mật khẩu')),
-        const SizedBox(height: 10),
-        const Text('Các thiết bị khác đang đăng nhập sẽ bị đăng xuất.',
-            textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
-      ]),
+      ],
     );
   }
 }
@@ -128,12 +200,33 @@ class _Rule extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(BuildContext context) {
-    final color = ok ? AppColors.present : AppColors.textMuted;
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(ok ? Icons.check : Icons.circle_outlined, size: 14, color: color),
-      const SizedBox(width: 6),
-      Text(text, style: TextStyle(fontSize: 13, color: color)),
-    ]);
-  }
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: ok ? AppColors.presentSoft : AppColors.inputFill,
+      borderRadius: BorderRadius.circular(999),
+      border: Border.all(
+        color: ok ? AppColors.presentBorder : AppColors.inputBorder,
+      ),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          ok ? Icons.check_circle : Icons.radio_button_unchecked,
+          size: 13,
+          color: ok ? AppColors.presentText : AppColors.textMuted,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: ok ? AppColors.presentText : AppColors.textMuted,
+          ),
+        ),
+      ],
+    ),
+  );
 }

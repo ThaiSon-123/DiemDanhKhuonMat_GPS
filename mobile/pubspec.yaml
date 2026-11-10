@@ -63,16 +63,16 @@ flutter:
 
   # Be Vietnam Pro (OFL, assets/fonts/OFL.txt), đóng gói sẵn để không phụ thuộc mạng.
   fonts:
-    - family: BeVietnamPro
+    - family: Inter
       fonts:
-        - asset: assets/fonts/BeVietnamPro-Regular.ttf
-        - asset: assets/fonts/BeVietnamPro-Medium.ttf
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
           weight: 500
-        - asset: assets/fonts/BeVietnamPro-SemiBold.ttf
+        - asset: assets/fonts/Inter-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/BeVietnamPro-Bold.ttf
+        - asset: assets/fonts/Inter-Bold.ttf
           weight: 700
-        - asset: assets/fonts/BeVietnamPro-ExtraBold.ttf
+        - asset: assets/fonts/Inter-ExtraBold.ttf
           weight: 800
 
   # To add assets to your application, add an assets section, like this:
