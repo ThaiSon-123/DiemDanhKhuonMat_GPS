@@ -1,0 +1,8 @@
+{
+  "type": "Feature",
+  "properties": { "name": "PLACEHOLDER: thay bằng đa giác khuôn viên thật (vẽ trên geojson.io)" },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [[[105.840, 21.002], [105.848, 21.002], [105.848, 21.008], [105.840, 21.008], [105.840, 21.002]]]
+  }
+}

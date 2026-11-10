@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+# Bí mật và dữ liệu
+.env
+backend/storage/
+backend/models/*.onnx
+experiments/data/
+# Flutter
+mobile/build/
+mobile/.dart_tool/
+mobile/android/key.properties
+*.jks

@@ -1,0 +1,29 @@
+# Đặc tả mục 9.4 + Global Constraints trong docs/plan.md. Ngưỡng mô hình chốt ở Task 11.
+face:
+  model_name: arcface_r50_onnx_v1
+  accept_threshold: 0.0
+  suspect_threshold: 0.0
+  antispoof_threshold: 0.0
+  yaw_sign: 1            # chốt ở Task 0 trên ảnh điện thoại thật
+  yaw_threshold: 0.25
+  min_brightness: 60
+  min_sharpness: 50
+  min_face_px: 100
+  actions: [turn_left, turn_right]
+gps:
+  default_r0_m: 20
+  r0_range_m: [10, 50]
+  max_acc_lecturer_m: 20
+  max_acc_student_m: 30
+  min_samples_lecturer: 5
+  min_samples_student: 3
+  max_span_s: 20
+  max_speed_mps: 30
+session:
+  default_duration_min: 10
+  max_attempts: 5
+  challenge_ttl_s: 60
+  room_token_window_s: 30
+retention:
+  evidence_days: 30
+campus_polygon_file: campus.geojson
