@@ -150,7 +150,7 @@ def test_classes_crud(client, admin, make_user, conn):
     bad = client.post("/admin/classes", headers=h, json={**body, "code": "X", "lecturer_id": sv["id"]})
     assert bad.status_code == 422 and bad.json()["error"]["details"][0]["field"] == "lecturer_id"
     item = client.get("/admin/classes", headers=h, params={"semester": "2026-1"}).json()["items"][0]
-    assert item["lecturer_name"] == "TS. Đức" and item["student_count"] == 0
+    assert item["lecturer_name"] == "TS. Đức" and item["student_count"] == 0 and item["session_count"] == 0
     assert client.patch(f"/admin/classes/{cid}", headers=h, json={"name": "ML"}).json()["name"] == "ML"
     assert client.delete(f"/admin/classes/{cid}", headers=h).status_code == 204
 
@@ -203,6 +203,10 @@ def test_audit_log_paginated_and_filtered(client, admin, make_user):
     assert first["action"] == "user.reset_password" and first["actor_name"] == a["full_name"]
     assert client.get("/admin/audit-log", headers=h, params={"action": "user.create"}).json()["total"] == 3
     assert client.get("/admin/audit-log", headers=h, params={"actor_id": u["id"]}).json()["total"] == 0
+    assert client.get("/admin/audit-log", headers=h, params={"action": "user."}).json()["total"] == 4
+    assert client.get("/admin/audit-log", headers=h, params={"actor": a["full_name"][:4].lower()}).json()["total"] == 4
+    assert client.get("/admin/audit-log", headers=h, params={"actor": "khong-co"}).json()["total"] == 0
+    assert first["target_name"] == u["full_name"]
 
 
 def test_cli_create_admin(conn, capsys):

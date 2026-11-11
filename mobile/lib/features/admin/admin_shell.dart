@@ -6,6 +6,10 @@ import '../../core/session.dart';
 import '../../ui/face_scan_icon.dart';
 import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
+import 'admin_widgets.dart';
+import 'audit_page.dart';
+import 'classes_page.dart';
+import 'import_page.dart';
 import 'users_page.dart';
 
 class _NavItem {
@@ -37,6 +41,27 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _current = 0;
   final _usersKey = GlobalKey<UsersPageState>();
+  final _classesKey = GlobalKey<ClassesPageState>();
+  final _importKey = GlobalKey<ImportPageState>();
+
+  Widget? get _action => switch (_current) {
+        0 => adminPrimaryButton('Thêm người dùng', Icons.add, () => _usersKey.currentState?.addUser()),
+        1 => adminPrimaryButton('Thêm lớp', Icons.add, () => _classesKey.currentState?.addClass()),
+        2 => TextButton.icon(
+            onPressed: () => _importKey.currentState?.downloadTemplate(),
+            icon: const Icon(Icons.download, size: 18),
+            label: const Text('Tải file mẫu', style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+        _ => null,
+      };
+
+  Widget _page(String label) => switch (_current) {
+        0 => UsersPage(key: _usersKey, session: widget.session),
+        1 => ClassesPage(key: _classesKey, session: widget.session),
+        2 => ImportPage(key: _importKey, session: widget.session),
+        5 => AuditPage(session: widget.session),
+        _ => Center(child: Text('Màn "$label" đang được xây dựng.', style: const TextStyle(color: AppColors.textMuted))),
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -62,28 +87,10 @@ class _AdminShellState extends State<AdminShell> {
                   group: item.group,
                   title: item.label,
                   showMenu: !wide,
-                  action: _current == 0
-                      ? FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size(0, 40),
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600),
-                          ),
-                          onPressed: () => _usersKey.currentState?.addUser(),
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Thêm người dùng'),
-                        )
-                      : null,
+                  action: _action,
                 ),
                 Expanded(
-                  child: _current == 0
-                      ? UsersPage(key: _usersKey, session: widget.session)
-                      : Center(
-                          child: Text('Màn "${item.label}" đang được xây dựng.',
-                              style: const TextStyle(color: AppColors.textMuted)),
-                        ),
+                  child: _page(item.label),
                 ),
               ]),
             ),

@@ -5,6 +5,11 @@ BOM = "﻿"
 USERS_HEADER = "role,username,email,full_name,student_code\n"
 
 
+def lm(res):
+    """Lỗi chỉ gồm dòng và thông điệp (cột kiểm riêng ở test_import_reports_columns_and_counts)."""
+    return [{"line": e["line"], "msg": e["msg"]} for e in res["errors"]]
+
+
 def count(conn, table):
     return conn.execute(f"SELECT count(*) c FROM {table}").fetchone()["c"]
 
@@ -12,7 +17,7 @@ def count(conn, table):
 def test_import_users_all_or_nothing(conn):
     csv = USERS_HEADER + "student,sv1,a@x.vn,A,SV1\nstudent,SV1,,B,SV2\n"
     res = importer.run(conn, "users", csv, dry_run=False)
-    assert res["ok"] is False and res["errors"] == [{"line": 3, "msg": "Tên đăng nhập trùng với dòng 2: sv1"}]
+    assert res["ok"] is False and lm(res) == [{"line": 3, "msg": "Tên đăng nhập trùng với dòng 2: sv1"}]
     assert count(conn, "users") == 0
 
 
@@ -20,7 +25,7 @@ def test_import_users_creates_temp_passwords(conn):
     csv = (BOM + "role,username,email,full_name,student_code\r\n"   # BOM + CRLF như file Excel xuất ra
            "student, SV001 , SV1@X.vn ,Nguyễn Văn An,SV001\r\nlecturer,duc.tm,,Trần Minh Đức,\r\n")
     res = importer.run(conn, "users", csv, dry_run=False)
-    assert res["ok"] is True and res["created"] == 2 and res["errors"] == []
+    assert res["ok"] is True and res["created"] == 2 and lm(res) == []
     assert [p["username"] for p in res["passwords"]] == ["sv001", "duc.tm"]
     rows = conn.execute("SELECT * FROM users ORDER BY id").fetchall()
     assert [(r["role"], r["username"], r["email"], r["student_code"], r["must_change_password"]) for r in rows] == [
@@ -48,7 +53,7 @@ def test_import_users_validates_each_line(conn, make_user):
 
 def test_import_missing_columns(conn):
     res = importer.run(conn, "users", "email,full_name\na@x.vn,A\n", dry_run=False)
-    assert res["ok"] is False and res["errors"] == [{"line": 1, "msg": "Thiếu cột: role, username, student_code"}]
+    assert res["ok"] is False and lm(res) == [{"line": 1, "msg": "Thiếu cột: role, username, student_code"}]
     ok = importer.run(conn, "users", "role,username,full_name,student_code\nstudent,sv1,A,SV1\n", dry_run=True)
     assert ok["ok"] is True  # cột email không bắt buộc
 
@@ -60,25 +65,25 @@ def test_import_dry_run_writes_nothing(conn):
 
 
 def test_import_classes_unknown_lecturer(conn, make_user):
-    make_user("lecturer", email="gv@x.vn")
-    make_user("student", email="sv@x.vn")
-    csv = ("code,name,semester,lecturer_email\n"
-           "IT4060,Học máy,2026-1,gv@x.vn\n"
-           "IT4343,Thị giác máy tính,2026-1,khong-co@x.vn\n"
-           "IT4310,Xử lý ảnh,2026-1,sv@x.vn\n")
+    make_user("lecturer", username="ducdm")
+    make_user("student", username="sv001")
+    csv = ("code,name,semester,lecturer_username\n"
+           "IT4060,Học máy,2026-1,ducdm\n"
+           "IT4343,Thị giác máy tính,2026-1,khongco\n"
+           "IT4310,Xử lý ảnh,2026-1,sv001\n")
     res = importer.run(conn, "classes", csv, dry_run=False)
-    assert res["errors"] == [{"line": 3, "msg": "Không có giảng viên với email: khong-co@x.vn"},
-                             {"line": 4, "msg": "Không có giảng viên với email: sv@x.vn"}]
+    assert lm(res) == [{"line": 3, "msg": "Không có giảng viên với tên đăng nhập: khongco"},
+                       {"line": 4, "msg": "Không có giảng viên với tên đăng nhập: sv001"}]
     assert count(conn, "classes") == 0
 
 
 def test_import_classes_ok_and_duplicate(conn, make_user, make_class):
-    gv = make_user("lecturer", email="gv@x.vn")
+    gv = make_user("lecturer", username="ducdm")
     make_class(gv["id"], code="IT1", semester="2026-1")
-    csv = "code,name,semester,lecturer_email\nIT2,Lớp 2,2026-1,GV@x.vn\nIT1,Lớp 1,2026-1,gv@x.vn\n"
-    assert importer.run(conn, "classes", csv, dry_run=False)["errors"] == [
+    csv = "code,name,semester,lecturer_username\nIT2,Lớp 2,2026-1,DucDM\nIT1,Lớp 1,2026-1,ducdm\n"
+    assert lm(importer.run(conn, "classes", csv, dry_run=False)) == [
         {"line": 3, "msg": "Lớp đã tồn tại: IT1 (2026-1)"}]
-    res = importer.run(conn, "classes", "code,name,semester,lecturer_email\nIT2,Lớp 2,2026-1,gv@x.vn\n", False)
+    res = importer.run(conn, "classes", "code,name,semester,lecturer_username\nIT2,Lớp 2,2026-1,ducdm\n", False)
     assert res["ok"] and res["created"] == 1
 
 
@@ -98,6 +103,16 @@ def test_import_enrollments_unknown_refs(conn, make_user, make_class):
     gv = make_user("lecturer")
     make_class(gv["id"], code="IT4060", semester="2026-1")
     csv = "class_code,semester,student_code\nIT9999,2026-1,SV001\nIT4060,2026-1,SV404\n"
-    assert importer.run(conn, "enrollments", csv, dry_run=False)["errors"] == [
+    assert lm(importer.run(conn, "enrollments", csv, dry_run=False)) == [
         {"line": 2, "msg": "Không có lớp: IT9999 (2026-1)"},
         {"line": 3, "msg": "Không có sinh viên với mã: SV404"}]
+
+
+def test_import_reports_columns_and_counts(conn, make_user):
+    make_user("student", username="coroi")
+    csv = USERS_HEADER + "student,sv1,,A,SV1\nstudent,coroi,,B,SV2\nteacher,sv3,,C,\n\n"
+    res = importer.run(conn, "users", csv, dry_run=True)
+    assert (res["total_rows"], res["error_rows"]) == (3, 2)  # dòng trống không tính
+    assert [(e["line"], e["col"]) for e in res["errors"]] == [(3, "username"), (4, "role")]
+    ok = importer.run(conn, "users", USERS_HEADER + "student,sv1,,A,SV1\n", dry_run=False)
+    assert (ok["total_rows"], ok["error_rows"], ok["created"]) == (1, 0, 1)

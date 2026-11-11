@@ -845,7 +845,7 @@ campus_polygon_file: campus.geojson
 | `type` | Cột | Ghi chú |
 | --- | --- | --- |
 | `users` | `role,username,email,full_name,student_code` | Cột `email` không bắt buộc; `student_code` để trống với giảng viên; mật khẩu tạm sinh ngẫu nhiên, trả về trong file kết quả để quản trị viên phát cho người dùng |
-| `classes` | `code,name,semester,lecturer_email` | Giảng viên phải tồn tại |
+| `classes` | `code,name,semester,lecturer_username` | Giảng viên phải tồn tại (theo tên đăng nhập) |
 | `enrollments` | `class_code,semester,student_code` | Lớp và sinh viên phải tồn tại; dòng đã có thì bỏ qua |
 
 ## 10. Kế hoạch đánh giá thực nghiệm

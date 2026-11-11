@@ -234,7 +234,8 @@ class ClassPatch(BaseModel):
 
 
 CLASS_SELECT = """SELECT c.id, c.code, c.name, c.semester, c.lecturer_id, l.full_name AS lecturer_name,
-  (SELECT count(*) FROM enrollments e WHERE e.class_id = c.id) AS student_count
+  (SELECT count(*) FROM enrollments e WHERE e.class_id = c.id) AS student_count,
+  (SELECT count(*) FROM attendance_sessions s WHERE s.class_id = c.id) AS session_count
 FROM classes c JOIN users l ON l.id = c.lecturer_id"""
 
 
@@ -364,13 +365,29 @@ def import_csv(body: ImportIn, request: Request, admin=Admin, conn=Conn):
 
 # ---------------- Nhật ký ----------------
 
+# Tên dễ đọc của đối tượng: "users:12" → họ tên, "classes:3" → mã lớp, "enrollments:3:12" → họ tên sinh viên.
+_TARGET_NAME = """CASE split_part(a.target, ':', 1)
+  WHEN 'users' THEN (SELECT x.full_name FROM users x WHERE x.id::text = split_part(a.target, ':', 2))
+  WHEN 'classes' THEN (SELECT x.code FROM classes x WHERE x.id::text = split_part(a.target, ':', 2))
+  WHEN 'enrollments' THEN (SELECT x.full_name FROM users x WHERE x.id::text = split_part(a.target, ':', 3))
+END"""
+
+
 @router.get("/audit-log")
-def audit_log(actor_id: int | None = None, action: str | None = None,
+def audit_log(actor_id: int | None = None, action: str | None = None, actor: str | None = None,
               from_: datetime | None = Query(None, alias="from"), to: datetime | None = None,
               page=Depends(page_params), _=Admin, conn=Conn):
-    select = ("SELECT a.id, a.actor_id, u.full_name AS actor_name, a.action, a.target, a.before, a.after, "
-              "host(a.ip) AS ip, a.created_at FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id")
+    """action kết thúc bằng "." là lọc theo nhóm (vd "user." khớp user.create, user.delete...)."""
+    select = f"SELECT a.id, a.actor_id, u.full_name AS actor_name, a.action, a.target, {_TARGET_NAME} AS target_name, " \
+             "a.before, a.after, host(a.ip) AS ip, a.created_at FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id"
     where, params = [], []
+    if action and action.endswith("."):
+        where.append("a.action LIKE %s")
+        params.append(action.replace("%", "") + "%")
+        action = None
+    if actor:
+        where.append("(u.full_name ILIKE %s OR u.username ILIKE %s)")
+        params += [f"%{actor.strip()}%"] * 2
     for cond, val in (("a.actor_id = %s", actor_id), ("a.action = %s", action),
                       ("a.created_at >= %s", from_), ("a.created_at < %s", to)):
         if val is not None:

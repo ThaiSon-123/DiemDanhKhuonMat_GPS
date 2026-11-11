@@ -9,6 +9,7 @@ import '../../core/session.dart';
 import '../../ui/neo.dart';
 import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
+import 'admin_widgets.dart';
 
 const _roles = {'student': 'Sinh viên', 'lecturer': 'Giảng viên', 'admin': 'Quản trị viên'};
 const _faces = {'none': 'Chưa đăng ký', 'pending': 'Chờ duyệt', 'approved': 'Đã duyệt', 'rejected': 'Bị từ chối'};
@@ -94,18 +95,6 @@ class UsersPageState extends State<UsersPage> {
     _reload();
   }
 
-  void _toast(String msg) => ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating));
-
-  Future<void> _run(Future<void> Function() action) async {
-    try {
-      await action();
-    } on ApiError catch (e) {
-      _toast(e.message);
-    }
-  }
-
   // ---- Thao tác ----
 
   Future<void> addUser() async {
@@ -116,11 +105,11 @@ class UsersPageState extends State<UsersPage> {
   }
 
   Future<void> _resetPassword(Map<String, dynamic> u) async {
-    final ok = await _confirm('Đặt lại mật khẩu cho ${u['full_name']}?',
+    final ok = await adminConfirm(context, 'Đặt lại mật khẩu cho ${u['full_name']}?',
         'Mật khẩu cũ và mọi phiên đăng nhập hiện tại sẽ mất hiệu lực. Người dùng phải đổi mật khẩu ở lần đăng nhập tới.',
         'Đặt lại');
-    if (!ok) return;
-    await _run(() async {
+    if (!ok || !mounted) return;
+    await adminRun(context, () async {
       final r = await _api.post('/admin/users/${u['id']}/reset-password');
       if (mounted) await _showTempPassword('${u['username']}', '${r['temp_password']}');
     });
@@ -129,37 +118,20 @@ class UsersPageState extends State<UsersPage> {
   Future<void> _toggleActive(Map<String, dynamic> u) async {
     final active = u['is_active'] == true;
     if (active) {
-      final ok = await _confirm('Vô hiệu hóa ${u['full_name']}?',
+      final ok = await adminConfirm(context, 'Vô hiệu hóa ${u['full_name']}?',
           'Tài khoản bị đăng xuất khỏi mọi thiết bị và không đăng nhập được nữa. '
               'Dữ liệu khuôn mặt bị xóa ngay; kết quả điểm danh vẫn giữ.',
           'Vô hiệu hóa',
           danger: true);
       if (!ok) return;
     }
-    await _run(() async {
+    if (!mounted) return;
+    await adminRun(context, () async {
       await _api.post('/admin/users/${u['id']}/${active ? 'deactivate' : 'activate'}');
-      _toast(active ? 'Đã vô hiệu hóa ${u['full_name']}' : 'Đã bật lại ${u['full_name']}');
+      if (mounted) adminToast(context, active ? 'Đã vô hiệu hóa ${u['full_name']}' : 'Đã bật lại ${u['full_name']}');
       _reload();
     });
   }
-
-  Future<bool> _confirm(String title, String body, String action, {bool danger = false}) async =>
-      await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(title),
-          content: Text(body),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
-            FilledButton(
-              style: danger ? FilledButton.styleFrom(backgroundColor: AppColors.absentText) : null,
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(action),
-            ),
-          ],
-        ),
-      ) ??
-      false;
 
   Future<void> _showTempPassword(String username, String temp) => showDialog(
         context: context,
@@ -197,8 +169,7 @@ class UsersPageState extends State<UsersPage> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1116),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const Text('Người dùng',
-                style: TextStyle(fontSize: 28, height: 36 / 28, fontWeight: FontWeight.w800, color: AppColors.text)),
+            const AdminHeading('Người dùng'),
             const SizedBox(height: 20),
             _kpiHero(),
             const SizedBox(height: 20),
@@ -261,33 +232,20 @@ class UsersPageState extends State<UsersPage> {
               child: TextField(
                 controller: _search,
                 style: const TextStyle(fontSize: 14, color: AppColors.text),
-                decoration: const InputDecoration(
-                  hintText: 'Tên, tên đăng nhập hoặc mã sinh viên',
-                  hintStyle: TextStyle(fontSize: 14, color: AppColors.textMuted),
-                  prefixIcon: Icon(Icons.search, size: 18, color: AppColors.textMuted),
-                  isDense: true,
-                  fillColor: Colors.white,
-                  contentPadding: EdgeInsets.symmetric(vertical: 13),
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      borderSide: BorderSide(color: AppColors.inputBorder)),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      borderSide: BorderSide(color: AppColors.focus, width: 2)),
-                ),
+                decoration: adminFieldDecoration('Tên, tên đăng nhập hoặc mã sinh viên', icon: Icons.search),
                 onChanged: (_) {
                   _debounce?.cancel();
                   _debounce = Timer(const Duration(milliseconds: 350), () => _filter(() {}));
                 },
               ),
             ),
-            _Select(
+            AdminSelect<String>(
               label: 'Vai trò',
               value: _role,
               options: {null: 'Mọi vai trò', ..._roles},
               onChanged: (v) => _filter(() => _role = v),
             ),
-            _Select(
+            AdminSelect<String>(
               label: 'Trạng thái khuôn mặt',
               value: _face,
               options: {null: 'Mọi trạng thái khuôn mặt', ..._faces},
@@ -400,13 +358,7 @@ class UsersPageState extends State<UsersPage> {
           style: TextStyle(fontWeight: FontWeight.w600, color: active ? const Color(0xFF059669) : const Color(0xFFE11D48))),
       Row(mainAxisAlignment: MainAxisAlignment.end, children: [
         OutlinedButton(
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(0, 36),
-            foregroundColor: AppColors.text,
-            side: const BorderSide(color: AppColors.inputBorder),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-            textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500),
-          ),
+          style: adminOutlinedStyle(),
           onPressed: () => _resetPassword(u),
           child: const Text('Đặt lại mật khẩu'),
         ),
@@ -431,33 +383,6 @@ class UsersPageState extends State<UsersPage> {
       ]),
     ]);
   }
-}
-
-class _Select extends StatelessWidget {
-  const _Select({required this.label, required this.value, required this.options, required this.onChanged});
-  final String label;
-  final String? value;
-  final Map<String?, String> options;
-  final ValueChanged<String?> onChanged;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-        label: label,
-        child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(border: Border.all(color: AppColors.inputBorder), borderRadius: BorderRadius.circular(10)),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String?>(
-              value: value,
-              borderRadius: BorderRadius.circular(12),
-              style: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: AppColors.text),
-              items: [for (final e in options.entries) DropdownMenuItem(value: e.key, child: Text(e.value))],
-              onChanged: onChanged,
-            ),
-          ),
-        ),
-      );
 }
 
 class _PageButton extends StatelessWidget {
@@ -519,12 +444,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
       });
       if (mounted) Navigator.pop(context, r as Map);
     } on ApiError catch (e) {
-      final fieldErrors = {
-        if (e.details is List)
-          for (final d in e.details as List)
-            if (d is Map) '${d['field']}': '${d['msg']}',
-      };
-      if (mounted) setState(() => _errors = fieldErrors.isEmpty ? {'_': e.message} : fieldErrors);
+      if (mounted) setState(() => _errors = fieldErrors(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

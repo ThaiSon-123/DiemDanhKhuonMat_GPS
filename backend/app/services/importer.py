@@ -11,7 +11,7 @@ from app.security import USERNAME_RULE, hash_password, normalize_username, temp_
 Kind = Literal["users", "classes", "enrollments"]
 COLUMNS = {
     "users": ["role", "username", "email", "full_name", "student_code"],
-    "classes": ["code", "name", "semester", "lecturer_email"],
+    "classes": ["code", "name", "semester", "lecturer_username"],
     "enrollments": ["class_code", "semester", "student_code"],
 }
 OPTIONAL = {"email"}  # cột có thể không có trong file
@@ -34,23 +34,25 @@ def run(conn: psycopg.Connection, kind: Kind, csv_text: str, dry_run: bool) -> d
     header, rows = _rows(csv_text)
     missing = [c for c in COLUMNS[kind] if c not in header and c not in OPTIONAL]
     if missing:
-        return _result([{"line": 1, "msg": "Thiếu cột: " + ", ".join(missing)}])
+        return _result([{"line": 1, "col": None, "msg": "Thiếu cột: " + ", ".join(missing)}], total=len(rows))
     errors: list[dict] = []
     check, write = _HANDLERS[kind]
     valid = check(conn, rows, errors)
     if errors:
-        return _result(errors)
+        return _result(errors, total=len(rows))
     if dry_run:
-        return _result([], created=len(valid))
-    return write(conn, valid)
+        return _result([], created=len(valid), total=len(rows))
+    return {**write(conn, valid), "total_rows": len(rows)}
 
 
-def _result(errors, created=0, passwords=None):
-    return {"ok": not errors, "errors": errors, "created": created, "passwords": passwords or []}
+def _result(errors, created=0, passwords=None, total=0):
+    """total_rows: số dòng dữ liệu; error_rows: số dòng có lỗi (một dòng có thể chỉ báo lỗi đầu tiên)."""
+    return {"ok": not errors, "errors": errors, "created": created, "passwords": passwords or [],
+            "total_rows": total, "error_rows": len({e["line"] for e in errors})}
 
 
-def _err(errors, line, msg):
-    errors.append({"line": line, "msg": msg})
+def _err(errors, line, msg, col):
+    errors.append({"line": line, "col": col, "msg": msg})
 
 
 # ---- users ----
@@ -64,27 +66,27 @@ def _check_users(conn, rows, errors):
         role, name, email = r["role"].lower(), normalize_username(r["username"]), r.get("email", "").lower() or None
         full_name, sc = r["full_name"], r["student_code"]
         if role not in ROLES:
-            _err(errors, line, f"Vai trò không hợp lệ: {r['role']} (chỉ nhận student, lecturer, admin)")
+            _err(errors, line, f"Vai trò không hợp lệ: {r['role']} (chỉ nhận student, lecturer, admin)", "role")
         elif not name:
-            _err(errors, line, f"Tên đăng nhập không hợp lệ: {r['username']} ({USERNAME_RULE})")
+            _err(errors, line, f"Tên đăng nhập không hợp lệ: {r['username']} ({USERNAME_RULE})", "username")
         elif email and ("@" not in email or " " in email):
-            _err(errors, line, f"Email không hợp lệ: {email}")
+            _err(errors, line, f"Email không hợp lệ: {email}", "email")
         elif not full_name:
-            _err(errors, line, "Thiếu họ tên")
+            _err(errors, line, "Thiếu họ tên", "full_name")
         elif role == "student" and not sc:
-            _err(errors, line, "Sinh viên phải có mã sinh viên")
+            _err(errors, line, "Sinh viên phải có mã sinh viên", "student_code")
         elif name in seen_name:
-            _err(errors, line, f"Tên đăng nhập trùng với dòng {seen_name[name]}: {name}")
+            _err(errors, line, f"Tên đăng nhập trùng với dòng {seen_name[name]}: {name}", "username")
         elif name in names:
-            _err(errors, line, f"Tên đăng nhập đã tồn tại: {name}")
+            _err(errors, line, f"Tên đăng nhập đã tồn tại: {name}", "username")
         elif email and email in seen_email:
-            _err(errors, line, f"Email trùng với dòng {seen_email[email]}: {email}")
+            _err(errors, line, f"Email trùng với dòng {seen_email[email]}: {email}", "email")
         elif email and email in emails:
-            _err(errors, line, f"Email đã tồn tại: {email}")
+            _err(errors, line, f"Email đã tồn tại: {email}", "email")
         elif sc and sc in seen_code:
-            _err(errors, line, f"Mã sinh viên trùng với dòng {seen_code[sc]}: {sc}")
+            _err(errors, line, f"Mã sinh viên trùng với dòng {seen_code[sc]}: {sc}", "student_code")
         elif sc and sc in codes:
-            _err(errors, line, f"Mã sinh viên đã tồn tại: {sc}")
+            _err(errors, line, f"Mã sinh viên đã tồn tại: {sc}", "student_code")
         else:
             valid.append({"role": role, "username": name, "email": email, "full_name": full_name,
                           "student_code": sc if role == "student" else None})
@@ -110,21 +112,21 @@ def _write_users(conn, valid):
 # ---- classes ----
 
 def _check_classes(conn, rows, errors):
-    lecturers = {r["email"]: r["id"] for r in
-                 conn.execute("SELECT lower(email) email, id FROM users WHERE role = 'lecturer' AND is_active")}
+    lecturers = {r["username"]: r["id"] for r in
+                 conn.execute("SELECT username, id FROM users WHERE role = 'lecturer' AND is_active")}
     existing = {(r["code"], r["semester"]) for r in conn.execute("SELECT code, semester FROM classes")}
     seen, valid = {}, []
     for line, r in rows:
         key = (r["code"], r["semester"])
-        lecturer = lecturers.get(r["lecturer_email"].lower())
+        lecturer = lecturers.get(r["lecturer_username"].lower())
         if not (r["code"] and r["name"] and r["semester"]):
-            _err(errors, line, "Thiếu mã lớp, tên lớp hoặc học kỳ")
+            _err(errors, line, "Thiếu mã lớp, tên lớp hoặc học kỳ", "code")
         elif lecturer is None:
-            _err(errors, line, f"Không có giảng viên với email: {r['lecturer_email']}")
+            _err(errors, line, f"Không có giảng viên với tên đăng nhập: {r['lecturer_username']}", "lecturer_username")
         elif key in seen:
-            _err(errors, line, f"Lớp trùng với dòng {seen[key]}: {key[0]} ({key[1]})")
+            _err(errors, line, f"Lớp trùng với dòng {seen[key]}: {key[0]} ({key[1]})", "code")
         elif key in existing:
-            _err(errors, line, f"Lớp đã tồn tại: {key[0]} ({key[1]})")
+            _err(errors, line, f"Lớp đã tồn tại: {key[0]} ({key[1]})", "code")
         else:
             valid.append({"code": key[0], "name": r["name"], "semester": key[1], "lecturer_id": lecturer})
         seen.setdefault(key, line)
@@ -150,9 +152,9 @@ def _check_enrollments(conn, rows, errors):
         cid = classes.get((r["class_code"], r["semester"]))
         sid = students.get(r["student_code"])
         if cid is None:
-            _err(errors, line, f"Không có lớp: {r['class_code']} ({r['semester']})")
+            _err(errors, line, f"Không có lớp: {r['class_code']} ({r['semester']})", "class_code")
         elif sid is None:
-            _err(errors, line, f"Không có sinh viên với mã: {r['student_code']}")
+            _err(errors, line, f"Không có sinh viên với mã: {r['student_code']}", "student_code")
         elif (cid, sid) not in existing:  # đã có thì bỏ qua, không báo lỗi
             valid.add((cid, sid))
     return sorted(valid)
