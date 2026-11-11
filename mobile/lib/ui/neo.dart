@@ -56,10 +56,14 @@ class HeroCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(20),
     this.emeraldGlow = true,
+    this.glow = AppColors.glowIndigo,
   });
   final Widget child;
   final EdgeInsets padding;
   final bool emeraldGlow;
+
+  /// Màu quầng sáng góc phải trên (đổi theo trạng thái, vd hồng khi bị từ chối).
+  final Color glow;
 
   @override
   Widget build(BuildContext context) {
@@ -79,10 +83,10 @@ class HeroCard extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          const Positioned(
+          Positioned(
             top: -56,
             right: -56,
-            child: _Glow(size: 176, color: AppColors.glowIndigo, blur: 40),
+            child: _Glow(size: 176, color: glow, blur: 40),
           ),
           if (emeraldGlow)
             const Positioned(
@@ -139,12 +143,10 @@ class NeoCard extends StatelessWidget {
   final double radius;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: padding,
+  // Nền trắng vẽ bằng Material (không phải Container) để ListTile / InkWell bên trong hiện được hiệu ứng chạm.
+  Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
-      color: Colors.white,
       borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: AppColors.cardBorder),
       boxShadow: const [
         BoxShadow(
           color: Color(0x0A0F172A),
@@ -153,7 +155,15 @@ class NeoCard extends StatelessWidget {
         ),
       ],
     ),
-    child: child,
+    child: Material(
+      color: Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(radius),
+        side: const BorderSide(color: AppColors.cardBorder),
+      ),
+      child: Padding(padding: padding, child: child),
+    ),
   );
 }
 

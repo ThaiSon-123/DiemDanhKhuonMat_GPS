@@ -68,6 +68,9 @@ ThemeData appTheme() {
           fontSize: 15,
           fontWeight: FontWeight.w700,
         ),
+      ).copyWith(
+        // Nút bị vô hiệu không đổ bóng tím (trông như quầng sáng quanh nút xám).
+        elevation: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.disabled) ? 0 : 8),
       ),
     ),
   );

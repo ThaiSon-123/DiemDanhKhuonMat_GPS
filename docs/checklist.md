@@ -296,9 +296,9 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 ## 2.2. Sinh viên (app điện thoại)
 
 - [ ] **Trang chủ**: thẻ trạng thái khuôn mặt + danh sách lớp + nút "Điểm danh" khi có phiên mở + đồng hồ đếm ngược
-- [ ] **Đồng ý dữ liệu** (hiện lại khi có phiên bản mới)
-- [ ] **Đăng ký khuôn mặt**: hướng dẫn, khung oval, chụp thẳng / trái / phải, lý do từng ảnh không đạt
-- [ ] **Khuôn mặt của tôi**: trạng thái, lý do từ chối, đăng ký lại, xóa dữ liệu (có xác nhận)
+- [x] **Đồng ý dữ liệu** (hiện lại khi có phiên bản mới)
+- [x] **Đăng ký khuôn mặt**: hướng dẫn, khung oval, chụp thẳng / trái / phải, lý do từng ảnh không đạt (chụp bằng nút, chưa tự chụp)
+- [x] **Khuôn mặt của tôi**: trạng thái, lý do từ chối, đăng ký lại, xóa dữ liệu (có xác nhận)
 - [ ] **Điểm danh** bước 1: xin thử thách
 - [ ] **Điểm danh** bước 2: quét QR (khi phiên bật mã phòng), kiểm tra đúng `session_id`
 - [ ] **Điểm danh** bước 3: lấy GPS, hiện độ chính xác và gợi ý
@@ -316,7 +316,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [ ] Nút đóng phiên
 - [ ] **Chi tiết sinh viên**: ảnh bằng chứng, điểm, d, r, cờ, các lượt; đặt trạng thái tay kèm ghi chú
 - [ ] **Lịch sử phiên** + chỉnh kết quả sau khi đóng
-- [ ] **Duyệt khuôn mặt** (sinh viên lớp mình; từ chối bắt buộc có lý do)
+- [x] **Duyệt khuôn mặt** (sinh viên lớp mình; từ chối bắt buộc có lý do)
 
 ## 2.4. Giảng viên (Flutter Web trên laptop)
 
@@ -329,7 +329,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [ ] **Người dùng**: tìm kiếm, lọc, tạo, sửa, đặt lại mật khẩu, vô hiệu hóa, xóa dữ liệu khuôn mặt
 - [ ] **Lớp**: theo học kỳ, đổi giảng viên, thêm / bớt sinh viên
 - [ ] **Nhập CSV**: tải file, xem trước lỗi từng dòng (`dry_run`), xác nhận
-- [ ] **Duyệt khuôn mặt** (mọi sinh viên)
+- [x] **Duyệt khuôn mặt** (mọi sinh viên)
 - [ ] **Báo cáo** + xuất CSV
 - [ ] **Nhật ký** (lọc người thực hiện, hành động, thời gian)
 
@@ -339,8 +339,8 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] `auth_flow_test.dart` (sai mật khẩu, bắt đổi mật khẩu, vào trang theo vai trò, đăng xuất): 3/3 xanh
 - [ ] `gps_sampler_test.dart`
 - [ ] `checkin_controller_test.dart`
-- [ ] `enroll_test.dart`, `face_review_test.dart`
-- [ ] `lecturer_test.dart`, `admin_test.dart`
+- [x] `enroll_test.dart` (đồng ý, đăng ký, quyền camera, xóa, duyệt)
+- [x] `home_pages_test.dart`, `admin_pages_test.dart` (trang chủ, quản trị)
 - [x] `flutter build web` thành công (và `flutter build apk --debug`)
 - [ ] Thử tay trọn luồng trên Android thật
 - [ ] Thử tay trọn luồng trên iOS thật
@@ -372,7 +372,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [ ] NFR-SEC-03 · Embedding và ảnh mã hóa AES-GCM, khóa nằm ngoài CSDL
 - [ ] NFR-SEC-04 · Bí mật production là giá trị mới, không nằm trong git
 - [ ] NFR-SEC-05 · Log server không in token, mật khẩu, embedding, ảnh
-- [ ] NFR-PRV-01 · Đồng ý có phiên bản trước khi đăng ký khuôn mặt
+- [x] NFR-PRV-01 · Đồng ý có phiên bản trước khi đăng ký khuôn mặt
 - [ ] NFR-PRV-02 · Khung hình điểm danh không ghi ra đĩa (trừ ảnh bằng chứng)
 - [ ] NFR-PRV-03 · Nhật ký đủ các thao tác nhạy cảm (§8)
 - [ ] NFR-PRV-04 · Sinh viên tự xóa được dữ liệu khuôn mặt
@@ -428,18 +428,18 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | Backend API (1.2 – 1.9) | 53/83 | Auth, Quản trị, /me, khuôn mặt (engine ONNX + đăng ký/duyệt/xóa), hàm vị trí, mã phòng |
 | Quy tắc nghiệp vụ (1.10) | 0/20 | |
 | Backend testing (1.11) | 9/14 | 145 test xanh (6 test cần mô hình thật, tự bỏ qua khi thiếu) |
-| App Flutter (2.1 – 2.5) | 3/42 | Đăng nhập, đổi mật khẩu, đăng xuất |
-| Flutter testing (2.6) | 3/10 | api_client, auth_flow, build web |
+| App Flutter (2.1 – 2.5) | 8/35 | Đăng nhập, trang chủ SV/GV, đồng ý, đăng ký và xóa khuôn mặt, duyệt khuôn mặt; web quản trị: người dùng, lớp, CSV, nhật ký |
+| Flutter testing (2.6) | 5/9 | 24 test xanh; còn GPS, điểm danh, thử tay trên máy thật |
 | Học máy & thí nghiệm (3) | 0% | |
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 120 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 156 mục `[ ]` (281 items)
+**Tổng cộng**: 128 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 148 mục `[ ]` (281 items)
 
 ### Bước tiếp theo khuyến nghị
 
 1. **T0 · Spike mô hình**: tải YuNet, ArcFace, MiniFASNet; chạy bằng webcam (cần người ngồi trước máy); mở khóa T8 engine ONNX
-2. **T10 · Màn đăng ký và duyệt khuôn mặt**: đồng ý dữ liệu, chụp 3–5 ảnh trên điện thoại; web Duyệt khuôn mặt
+2. **T14 · Mở phiên**: POST /sessions (GPS giảng viên, khuôn viên), đóng phiên, mã phòng; rồi T15 điểm danh 6 bước
 3. **Bật Docker**: chạy `alembic upgrade head` và `create-admin --username admin` để thử app thật
 4. **Gửi nhà trường xin phép** (mục 6) và lấy tọa độ đa giác khuôn viên thật cho `campus.geojson`
 

@@ -5,7 +5,7 @@ import '../../core/session.dart';
 import '../../ui/neo.dart';
 import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
-import '../home/account_sheet.dart';
+import 'lecturer_nav.dart';
 
 /// Artboard "GV · Lớp của tôi" (GV_LopCuaToi.dc.html). Dữ liệu: GET /me/classes.
 /// Bộ đếm có mặt / đáng ngờ / chưa của phiên đang mở chờ GET /sessions/{id}/records (T16).
@@ -19,6 +19,7 @@ class LecturerHomePage extends StatefulWidget {
 
 class _LecturerHomePageState extends State<LecturerHomePage> {
   List<Map<String, dynamic>>? _classes;
+  int? _pending;
   String? _error;
 
   @override
@@ -32,6 +33,8 @@ class _LecturerHomePageState extends State<LecturerHomePage> {
     try {
       final r = await widget.session.api.get('/me/classes');
       if (mounted) setState(() => _classes = [for (final c in r as List) Map<String, dynamic>.from(c as Map)]);
+      final pending = await widget.session.api.get('/faces/pending') as List; // số trên tab "Duyệt mặt"
+      if (mounted) setState(() => _pending = pending.length);
     } on ApiError catch (e) {
       if (mounted) setState(() => _error = e.message);
     }
@@ -44,19 +47,7 @@ class _LecturerHomePageState extends State<LecturerHomePage> {
       header: NeoHeader(label: 'Giảng viên', title: 'Lớp của tôi', trailing: [
         InitialsAvatar(name, bg: const Color(0xFFFFFBEB), fg: const Color(0xFFB45309)),
       ]),
-      dock: NeoDock(
-        current: 0,
-        items: const [
-          DockItem(Icons.class_, 'Lớp'),
-          DockItem(Icons.how_to_reg_outlined, 'Duyệt mặt'),
-          DockItem(Icons.badge_outlined, 'Tài khoản'),
-        ],
-        onTap: (i) => switch (i) {
-          1 => comingSoon(context, 'Duyệt khuôn mặt'),
-          2 => showAccountSheet(context, widget.session),
-          _ => null,
-        },
-      ),
+      dock: lecturerDock(context, widget.session, 0, pending: _pending),
       body: _classes == null
           ? LoadingOrError(error: _error, onRetry: _load)
           : RefreshIndicator(onRefresh: _load, child: _content(name, _classes!)),
@@ -130,6 +121,7 @@ class _LiveClassCard extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: const Color(0xFF020617),
+              elevation: 0,
               textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w700),
             ),
             onPressed: () => comingSoon(context, 'Theo dõi phiên'),

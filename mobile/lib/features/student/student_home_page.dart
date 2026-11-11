@@ -5,7 +5,7 @@ import '../../core/session.dart';
 import '../../ui/neo.dart';
 import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
-import '../home/account_sheet.dart';
+import 'student_nav.dart';
 
 /// Artboard "SV · Trang chủ" (SV_TrangChu.dc.html). Dữ liệu: GET /me, GET /me/classes.
 /// Phần trăm chuyên cần từng lớp chờ GET /me/attendance (T16); phòng học, lịch học chưa có trong CSDL.
@@ -56,19 +56,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
         if (me != null)
           InitialsAvatar('${me['full_name']}', verified: me['face']?['status'] == 'approved'),
       ]),
-      dock: NeoDock(
-        current: 0,
-        items: const [
-          DockItem(Icons.home, 'Trang chủ'),
-          DockItem(Icons.calendar_month, 'Lịch sử'),
-          DockItem(Icons.badge_outlined, 'Tài khoản'),
-        ],
-        onTap: (i) => switch (i) {
-          1 => comingSoon(context, 'Lịch sử chuyên cần'),
-          2 => showAccountSheet(context, widget.session),
-          _ => null,
-        },
-      ),
+      dock: studentDock(context, 0),
       body: me == null || _classes == null
           ? LoadingOrError(error: _error, onRetry: _load)
           : RefreshIndicator(onRefresh: _load, child: _content(me, _classes!)),
@@ -82,6 +70,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
       children: [
         _GreetingCard(me: me, semester: classes.isEmpty ? null : '${classes.first['semester']}'),
         const SizedBox(height: 14),
+        if (_enrollNote(me) case final note?) ...[_EnrollCard(note: note, onTap: () => goEnroll(context, me)), const SizedBox(height: 14)],
         if (live.isEmpty) const _NoSessionCard() else for (final c in live) ...[_LiveCard(c), const SizedBox(height: 14)],
         if (live.isEmpty) const SizedBox(height: 14),
         Padding(
@@ -108,6 +97,53 @@ class _StudentHomePageState extends State<StudentHomePage> {
       ],
     );
   }
+}
+
+/// Lời nhắc đăng ký khi chưa có mẫu dùng được để điểm danh; null khi mẫu đã duyệt và đúng mô hình.
+(String, String)? _enrollNote(Map<String, dynamic> me) {
+  final f = (me['face'] as Map?) ?? const {};
+  return switch ('${f['status']}') {
+    'approved' when f['model_ok'] == false => ('Cần đăng ký lại khuôn mặt', 'Hệ thống đã đổi mô hình nhận diện.'),
+    'approved' || 'pending' => null,
+    'rejected' => ('Đăng ký lại khuôn mặt', 'Ảnh lần trước bị từ chối: ${f['reject_reason'] ?? ''}'),
+    _ => ('Đăng ký khuôn mặt', 'Cần làm một lần trước khi điểm danh. Mất khoảng 1 phút.'),
+  };
+}
+
+class _EnrollCard extends StatelessWidget {
+  const _EnrollCard({required this.note, required this.onTap});
+  final (String, String) note;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(color: const Color(0x26FFFFFF), borderRadius: BorderRadius.circular(16)),
+                child: const Icon(Icons.face_retouching_natural, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(note.$1, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                  const SizedBox(height: 2),
+                  Text(note.$2, style: const TextStyle(fontSize: 12, height: 17 / 12, color: Color(0xFFE0E7FF))),
+                ]),
+              ),
+              const Icon(Icons.arrow_forward, color: Colors.white),
+            ]),
+          ),
+        ),
+      );
 }
 
 class _GreetingCard extends StatelessWidget {
@@ -206,6 +242,7 @@ class _LiveCard extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: const Color(0xFF020617),
+              elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
               shadowColor: Colors.white24,
             ),
