@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/api_error.dart';
 import '../../core/session.dart';
@@ -8,7 +9,6 @@ import '../../ui/theme.dart';
 import 'lecturer_nav.dart';
 
 /// Artboard "GV · Lớp của tôi" (GV_LopCuaToi.dc.html). Dữ liệu: GET /me/classes.
-/// Bộ đếm có mặt / đáng ngờ / chưa của phiên đang mở chờ GET /sessions/{id}/records (T16).
 class LecturerHomePage extends StatefulWidget {
   const LecturerHomePage({super.key, required this.session});
   final Session session;
@@ -92,6 +92,9 @@ class _LecturerHomePageState extends State<LecturerHomePage> {
   }
 }
 
+String _path(String page, Map c) =>
+    Uri(path: '/lecturer/$page/${c['id']}', queryParameters: {'code': '${c['code']}', 'n': '${c['student_count']}'}).toString();
+
 class _LiveClassCard extends StatelessWidget {
   const _LiveClassCard(this.c);
   final Map<String, dynamic> c;
@@ -124,7 +127,7 @@ class _LiveClassCard extends StatelessWidget {
               elevation: 0,
               textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w700),
             ),
-            onPressed: () => comingSoon(context, 'Theo dõi phiên'),
+            onPressed: () => context.go('/lecturer/session/${s['id']}'),
             child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Text('Theo dõi phiên'),
               SizedBox(width: 8),
@@ -163,7 +166,7 @@ class _ClassCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w700),
                   ),
-                  onPressed: () => comingSoon(context, 'Mở phiên'),
+                  onPressed: () => context.go(_path('open', c)),
                   icon: const Icon(Icons.play_circle_outline, size: 17),
                   label: const Text('Mở phiên'),
                 ),
@@ -181,7 +184,7 @@ class _ClassCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600),
                   ),
-                  onPressed: () => comingSoon(context, 'Lịch sử phiên'),
+                  onPressed: () => context.go(_path('history', c)),
                   icon: const Icon(Icons.history, size: 17),
                   label: const Text('Lịch sử'),
                 ),

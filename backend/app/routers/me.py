@@ -64,3 +64,14 @@ def my_classes(user: dict = Depends(require_role("student", "lecturer")),
                f"(SELECT count(*) FROM enrollments e WHERE e.class_id = c.id) AS student_count, {_OPEN_SESSION} "
                "FROM classes c WHERE c.lecturer_id = %s")
     return conn.execute(sql + " ORDER BY c.semester DESC, c.code", (user["id"],)).fetchall()
+
+
+@router.get("/me/attendance")
+def my_attendance(user: dict = Depends(require_role("student")), conn: psycopg.Connection = Depends(get_conn)):
+    """Mọi buổi của mọi lớp mình học, mới nhất trước. Không trả điểm số (sinh viên không bao giờ thấy)."""
+    return conn.execute(
+        "SELECT r.session_id, c.id AS class_id, c.code AS class_code, c.name AS class_name, s.opened_at, r.status, "
+        "a.received_at AS checked_at FROM attendance_records r JOIN attendance_sessions s ON s.id = r.session_id "
+        "JOIN classes c ON c.id = s.class_id LEFT JOIN checkin_attempts a ON a.id = r.best_attempt_id "
+        "WHERE r.student_id = %s ORDER BY s.opened_at DESC",
+        (user["id"],)).fetchall()

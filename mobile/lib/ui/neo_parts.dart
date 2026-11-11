@@ -59,13 +59,14 @@ class HeaderTile extends StatelessWidget {
 
 /// Đầu trang mờ kính cao 64: logo (hoặc nút quay lại), nhãn nhỏ màu indigo, tiêu đề, phần bên phải.
 class NeoHeader extends StatelessWidget {
-  const NeoHeader({super.key, required this.label, required this.title, this.trailing = const [], this.onBack});
+  const NeoHeader({super.key, required this.label, required this.title, this.trailing = const [], this.onBack, this.backIcon = Icons.arrow_back});
   final String label;
   final String title;
   final List<Widget> trailing;
 
   /// Có giá trị thì thay logo bằng nút quay lại.
   final VoidCallback? onBack;
+  final IconData backIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -86,12 +87,14 @@ class NeoHeader extends StatelessWidget {
               HeaderTile(
                 tooltip: 'Quay lại',
                 onTap: onBack,
-                child: const Icon(Icons.arrow_back, size: 20, color: AppColors.textSecondary),
+                child: Icon(backIcon, size: 20, color: AppColors.textSecondary),
               ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(label.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.4, color: AppColors.primary)),
                 Text(title,
                     overflow: TextOverflow.ellipsis,

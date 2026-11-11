@@ -45,7 +45,7 @@ Map<String, Object?> me({String face = 'none', bool consent = true, String? reas
 
 /// Dựng trang trong một GoRouter tối thiểu; trả HTTP giả và danh sách đường dẫn đã chuyển tới.
 Future<(FakeHttp, List<String>)> pump(WidgetTester t, Widget Function(Session) page, Reply Function(RequestOptions) h,
-    {Size size = const Size(390, 844)}) async {
+    {Size size = const Size(390, 844), bool settle = true}) async {
   t.view.physicalSize = size;
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
@@ -60,7 +60,7 @@ Future<(FakeHttp, List<String>)> pump(WidgetTester t, Widget Function(Session) p
     }),
   ]);
   await t.pumpWidget(MaterialApp.router(theme: appTheme(), routerConfig: router));
-  await t.pumpAndSettle();
+  if (settle) await t.pumpAndSettle();
   return (http, went);
 }
 

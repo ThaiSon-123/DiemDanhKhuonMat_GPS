@@ -140,7 +140,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] `GET /me` (đồng ý, trạng thái khuôn mặt, `model_ok`, `pending_update`)
 - [x] `GET /me/classes` (sinh viên: `open_session`; giảng viên: `student_count`)
 - [x] `POST /me/consent` (đúng phiên bản hiện hành)
-- [ ] `GET /me/attendance` (T16)
+- [x] `GET /me/attendance` (T16)
 
 ## 1.5. Khuôn mặt (T6 → T9, §4.2, §5)
 
@@ -219,11 +219,11 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ## 1.8. Theo dõi, duyệt & báo cáo (T16, §4.5)
 
-- [ ] `GET /sessions/{id}/records` (bộ đếm, lượt cuối, `recenter_suggested`)
-- [ ] `PATCH /sessions/{id}/records/{student_id}` (chỉ trạng thái tay, ghi nhật ký trước / sau)
-- [ ] `POST /sessions/{id}/recenter` (giữ tâm gốc, chấm lại lượt drift, không hạ ai)
-- [ ] `GET /attempts/{id}/evidence` (ghi nhật ký)
-- [ ] `GET /reports/classes/{id}` (JSON + `?format=csv` có BOM)
+- [x] `GET /sessions/{id}/records` (bộ đếm, lượt cuối, `recenter_suggested`)
+- [x] `PATCH /sessions/{id}/records/{student_id}` (chỉ trạng thái tay, ghi nhật ký trước / sau)
+- [x] `POST /sessions/{id}/recenter` (giữ tâm gốc, chấm lại lượt drift, không hạ ai)
+- [x] `GET /attempts/{id}/evidence` (ghi nhật ký)
+- [x] `GET /reports/classes/{id}` (JSON + `?format=csv` có BOM)
 
 ## 1.9. Tác vụ nền (T17)
 
@@ -268,7 +268,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] `test_geo.py`, `test_room_token.py`
 - [x] `test_sessions_api.py`
 - [x] `test_checkin.py` (gồm 5 tình huống Review Focus)
-- [ ] `test_records_api.py`, `test_reports.py`
+- [x] `test_records_api.py` (15 test, gồm cả báo cáo và `/me/attendance`)
 - [ ] `test_cleanup.py`
 
 ### 1.11.1. Review Focus (plan.md)
@@ -290,55 +290,56 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] Nút đăng xuất
 - [ ] Màn **Quyền truy cập** (camera / vị trí / Bluetooth bị từ chối → giải thích + mở cài đặt)
 - [ ] `captureJpeg` (cạnh dài ≤ 1280 px, chất lượng 80)
-- [ ] `GpsSampler` (thu mẫu thô, `minGood`, `minDuration`, `timeout`)
+- [x] `GpsSampler` (thu mẫu thô, `minGood`, `minDuration`, `timeout`)
 - [ ] Component dùng chung: loading, empty state, banner lỗi, hộp xác nhận
 
 ## 2.2. Sinh viên (app điện thoại)
 
-- [ ] **Trang chủ**: thẻ trạng thái khuôn mặt + danh sách lớp + nút "Điểm danh" khi có phiên mở + đồng hồ đếm ngược
+- [x] **Trang chủ**: thẻ trạng thái khuôn mặt + danh sách lớp + nút "Điểm danh" khi có phiên mở + đồng hồ đếm ngược
 - [x] **Đồng ý dữ liệu** (hiện lại khi có phiên bản mới)
 - [x] **Đăng ký khuôn mặt**: hướng dẫn, khung oval, chụp thẳng / trái / phải, lý do từng ảnh không đạt (chụp bằng nút, chưa tự chụp)
 - [x] **Khuôn mặt của tôi**: trạng thái, lý do từ chối, đăng ký lại, xóa dữ liệu (có xác nhận)
-- [ ] **Điểm danh** bước 1: xin thử thách
-- [ ] **Điểm danh** bước 2: quét QR (khi phiên bật mã phòng), kiểm tra đúng `session_id`
-- [ ] **Điểm danh** bước 3: lấy GPS, hiện độ chính xác và gợi ý
-- [ ] **Điểm danh** bước 4: camera với chỉ dẫn hành động + đếm ngược 60 s
-- [ ] **Điểm danh** bước 5: gửi, hiện kết quả, lý do, số lượt còn lại, nút thử lại
-- [ ] Tự xin thử thách mới khi gặp `CHALLENGE_INVALID`
-- [ ] **Lịch sử chuyên cần** theo lớp
+- [x] **Điểm danh** bước 1: xin thử thách (`/student/checkin/:sid`)
+- [x] **Điểm danh** bước 2: quét QR (khi phiên bật mã phòng), kiểm tra đúng `session_id`, có ô nhập mã tay
+- [x] **Điểm danh** bước 3: lấy GPS (30 m, 3 mẫu, 5 s, hết 15 s báo lỗi), hiện độ chính xác và gợi ý; từ chối quyền → màn cấp quyền
+- [x] **Điểm danh** bước 4: camera với chỉ dẫn hành động + đếm ngược 60 s (6 khung cách ~350 ms)
+- [x] **Điểm danh** bước 5: gửi, hiện kết quả, lý do, số lượt còn lại, nút thử lại
+- [x] Tự xin thử thách mới khi gặp `CHALLENGE_INVALID` (một lần, giữ mẫu GPS)
+- [x] **Lịch sử chuyên cần** theo lớp
 
 ## 2.3. Giảng viên (app điện thoại)
 
-- [ ] **Lớp của tôi** (vào thẳng phiên đang chạy nếu có)
-- [ ] **Mở phiên**: thời hạn, r0, bật mã phòng, thanh trạng thái GPS, nút mở chỉ bật khi đủ mẫu
-- [ ] **Phiên đang chạy**: bộ đếm, danh sách lọc theo trạng thái, tự làm mới 3–5 s
-- [ ] Dải cảnh báo "tâm có thể lệch" + nút tính lại tâm
-- [ ] Nút đóng phiên
-- [ ] **Chi tiết sinh viên**: ảnh bằng chứng, điểm, d, r, cờ, các lượt; đặt trạng thái tay kèm ghi chú
-- [ ] **Lịch sử phiên** + chỉnh kết quả sau khi đóng
+- [x] **Lớp của tôi** (vào thẳng phiên đang chạy nếu có)
+- [x] **Mở phiên**: thời hạn, r0, bật mã phòng, thanh trạng thái GPS, nút mở chỉ bật khi đủ mẫu
+- [x] **Phiên đang chạy**: bộ đếm, danh sách lọc theo trạng thái, tự làm mới 3–5 s
+- [x] Dải cảnh báo "tâm có thể lệch" + nút tính lại tâm
+- [x] Nút đóng phiên
+- [x] **Chi tiết sinh viên**: ảnh bằng chứng, điểm, d, r, cờ, các lượt; đặt trạng thái tay kèm ghi chú
+- [x] **Lịch sử phiên** + chỉnh kết quả sau khi đóng
 - [x] **Duyệt khuôn mặt** (sinh viên lớp mình; từ chối bắt buộc có lý do)
 
 ## 2.4. Giảng viên (Flutter Web trên laptop)
 
-- [ ] **Chiếu mã phòng**: QR toàn màn hình, đổi mỗi 30 s, tên lớp + đồng hồ phiên
-- [ ] Phiên đang chạy / duyệt khuôn mặt / lịch sử phiên với bố cục rộng
-- [ ] **Báo cáo lớp** + nút xuất CSV
+- [x] **Chiếu mã phòng**: QR toàn màn hình, đổi mỗi 30 s, tên lớp + đồng hồ phiên
+- [ ] Phiên đang chạy / duyệt khuôn mặt / lịch sử phiên với bố cục rộng (hiện dùng bố cục điện thoại giữa màn, rộng tối đa 480 px)
+- [x] **Báo cáo lớp** + nút xuất CSV
 
 ## 2.5. Quản trị viên (Flutter Web)
 
-- [ ] **Người dùng**: tìm kiếm, lọc, tạo, sửa, đặt lại mật khẩu, vô hiệu hóa, xóa dữ liệu khuôn mặt
-- [ ] **Lớp**: theo học kỳ, đổi giảng viên, thêm / bớt sinh viên
-- [ ] **Nhập CSV**: tải file, xem trước lỗi từng dòng (`dry_run`), xác nhận
+- [x] **Người dùng**: tìm kiếm, lọc, tạo, sửa, đặt lại mật khẩu, vô hiệu hóa, xóa dữ liệu khuôn mặt
+- [x] **Lớp**: theo học kỳ, đổi giảng viên, thêm / bớt sinh viên
+- [x] **Nhập CSV**: tải file, xem trước lỗi từng dòng (`dry_run`), xác nhận
 - [x] **Duyệt khuôn mặt** (mọi sinh viên)
-- [ ] **Báo cáo** + xuất CSV
-- [ ] **Nhật ký** (lọc người thực hiện, hành động, thời gian)
+- [x] **Báo cáo** + xuất CSV
+- [x] **Nhật ký** (lọc người thực hiện, hành động, thời gian)
 
 ## 2.6. Flutter testing
 
 - [x] `api_client_test.dart` (refresh 1 lần, thu hồi token, đọc envelope lỗi): 4/4 xanh
 - [x] `auth_flow_test.dart` (sai mật khẩu, bắt đổi mật khẩu, vào trang theo vai trò, đăng xuất): 3/3 xanh
-- [ ] `gps_sampler_test.dart`
-- [ ] `checkin_controller_test.dart`
+- [x] `gps_sampler_test.dart`: 4/4 xanh
+- [x] `checkin_controller_test.dart` (10/10) và `checkin_page_test.dart` (6/6)
+- [x] `lecturer_test.dart` (9/9): mở phiên, phiên đang chạy, tâm lệch, đóng phiên, chi tiết SV, chiếu mã, lịch sử phiên, báo cáo, lịch sử chuyên cần
 - [x] `enroll_test.dart` (đồng ý, đăng ký, quyền camera, xóa, duyệt)
 - [x] `home_pages_test.dart`, `admin_pages_test.dart` (trang chủ, quản trị)
 - [x] `flutter build web` thành công (và `flutter build apk --debug`)
@@ -434,12 +435,12 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 175 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 101 mục `[ ]` (281 items)
+**Tổng cộng**: 208 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 69 mục `[ ]` (282 items)
 
 ### Bước tiếp theo khuyến nghị
 
-1. **T0 · Spike mô hình**: tải YuNet, ArcFace, MiniFASNet; chạy bằng webcam (cần người ngồi trước máy); mở khóa T8 engine ONNX
-2. **T18 · Màn điểm danh (sinh viên)** và **T19 · màn giảng viên**: mở phiên, theo dõi, chiếu QR; T16 backend theo dõi/duyệt tay/báo cáo
+1. **Bật Docker, chạy thử trọn luồng trên máy thật**: giảng viên mở phiên → chiếu mã → sinh viên điểm danh → duyệt → đóng → xuất CSV
+2. **T17 · Dọn dữ liệu** (ảnh bằng chứng 30 ngày, thử thách cũ) và **T20 · Triển khai** lên VPS
 3. **Bật Docker**: chạy `alembic upgrade head` và `create-admin --username admin` để thử app thật
 4. **Gửi nhà trường xin phép** (mục 6) và lấy tọa độ đa giác khuôn viên thật cho `campus.geojson`
 

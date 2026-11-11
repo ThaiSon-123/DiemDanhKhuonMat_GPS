@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 
 import 'api_error.dart';
@@ -19,6 +21,16 @@ class ApiClient {
   Future<dynamic> post(String path, {Object? data}) => _send(path, 'POST', data: data);
   Future<dynamic> patch(String path, {Object? data}) => _send(path, 'PATCH', data: data);
   Future<dynamic> delete(String path) => _send(path, 'DELETE');
+
+  /// Tải nội dung nhị phân (vd ảnh bằng chứng image/jpeg).
+  Future<Uint8List> getBytes(String path) async {
+    try {
+      final r = await dio.get<List<int>>(path, options: Options(responseType: ResponseType.bytes));
+      return Uint8List.fromList(r.data!);
+    } on DioException catch (e) {
+      throw ApiError.fromDio(e);
+    }
+  }
 
   Future<dynamic> _send(String path, String method, {Object? data, Map<String, dynamic>? query}) async {
     try {

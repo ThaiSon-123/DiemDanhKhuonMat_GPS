@@ -8,6 +8,7 @@ import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
 import 'admin_widgets.dart';
 import '../faces/face_review_page.dart';
+import '../lecturer/report_page.dart';
 import 'audit_page.dart';
 import 'classes_page.dart';
 import 'import_page.dart';
@@ -61,6 +62,7 @@ class _AdminShellState extends State<AdminShell> {
         1 => ClassesPage(key: _classesKey, session: widget.session),
         2 => ImportPage(key: _importKey, session: widget.session),
         3 => FaceReviewPage(session: widget.session),
+        4 => ReportPage(session: widget.session),
         5 => AuditPage(session: widget.session),
         _ => Center(child: Text('Màn "$label" đang được xây dựng.', style: const TextStyle(color: AppColors.textMuted))),
       };

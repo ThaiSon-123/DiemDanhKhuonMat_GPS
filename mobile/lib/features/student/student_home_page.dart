@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/api_error.dart';
 import '../../core/session.dart';
@@ -81,7 +82,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
             Pill('${classes.length} môn', bg: AppColors.inputBorder, fg: AppColors.textLabel),
             const Spacer(),
             TextButton(
-              onPressed: () => comingSoon(context, 'Lịch sử chuyên cần'),
+              onPressed: () => context.go('/student/history'),
               child: const Row(mainAxisSize: MainAxisSize.min, children: [
                 Text('Chuyên cần', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                 Icon(Icons.chevron_right, size: 16),
@@ -246,7 +247,8 @@ class _LiveCard extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
               shadowColor: Colors.white24,
             ),
-            onPressed: () => comingSoon(context, 'Điểm danh'),
+            onPressed: () => context.go(Uri(path: '/student/checkin/${s['id']}',
+                queryParameters: {'code': '${c['code']}', 'name': '${c['name']}'}).toString()),
             child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Icon(Icons.document_scanner_outlined, size: 20, color: AppColors.primary),
               SizedBox(width: 8),

@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import errors
-from app.routers import admin, auth, faces, me, sessions
+from app.routers import admin, auth, faces, me, records, reports, sessions
 
 MAX_BODY_BYTES = 3 * 1024 * 1024
 
@@ -15,6 +15,8 @@ app.include_router(me.router)
 app.include_router(admin.router)
 app.include_router(faces.router)
 app.include_router(sessions.router)
+app.include_router(records.router)
+app.include_router(reports.router)
 
 if os.environ.get("CORS_ORIGIN_REGEX"):
     app.add_middleware(CORSMiddleware, allow_origin_regex=os.environ["CORS_ORIGIN_REGEX"],

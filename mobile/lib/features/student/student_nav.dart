@@ -17,7 +17,7 @@ NeoDock studentDock(BuildContext context, int current) => NeoDock(
           case 0:
             context.go('/student');
           case 1:
-            comingSoon(context, 'Lịch sử chuyên cần');
+            context.go('/student/history');
           case 2:
             context.go('/student/face');
         }
