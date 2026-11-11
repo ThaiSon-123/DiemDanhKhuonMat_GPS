@@ -3,26 +3,22 @@ import time
 from datetime import datetime, timezone
 
 import psycopg
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from pydantic import BaseModel, Field, ValidationError
 
 from app.config import get_settings
 from app.db import get_conn
 from app.errors import ApiError
 from app.security import require_role
+from app.services import checkin as ck
 from app.services import geo, room_token
 from app.services import sessions as svc
+from app.services.checkin import SampleIn
+from app.services.face.runtime import get_engine
+from app.services.face.types import FaceEngine
 
 router = APIRouter(tags=["sessions"])
 Lecturer = Depends(require_role("lecturer"))
-
-
-class SampleIn(BaseModel):
-    lat: float = Field(ge=-90, le=90, allow_inf_nan=False)
-    lng: float = Field(ge=-180, le=180, allow_inf_nan=False)
-    acc: float = Field(gt=0, allow_inf_nan=False)
-    ts: int
-    mock: bool = False
 
 
 class OpenSessionIn(BaseModel):
@@ -90,3 +86,30 @@ def class_sessions(class_id: int, user=Lecturer, conn: psycopg.Connection = Depe
            WHERE s.class_id = %s GROUP BY s.id ORDER BY s.opened_at DESC""", (class_id,)).fetchall()
     keys = ("present", "suspicious", "absent", "excused", "rejected", "total")
     return [{**{k: v for k, v in r.items() if k not in keys}, "counts": {k: r[k] for k in keys}} for r in rows]
+
+
+# ---- Điểm danh (sinh viên) ----
+
+Student = Depends(require_role("student"))
+MIN_FRAMES, MAX_FRAMES = 5, 8
+
+
+@router.post("/sessions/{session_id}/challenge")
+def challenge(session_id: int, user=Student, conn: psycopg.Connection = Depends(get_conn)):
+    return ck.issue_challenge(conn, session_id, user, ck.now_utc())
+
+
+@router.post("/sessions/{session_id}/checkin")
+def checkin(session_id: int, request: Request, frames: list[UploadFile] = File(...), meta: str = Form(...),
+            user=Student, engine: FaceEngine = Depends(get_engine), conn: psycopg.Connection = Depends(get_conn)):
+    try:
+        m = ck.CheckinMeta.model_validate_json(meta)
+    except ValidationError as e:
+        details = [{"field": "meta." + ".".join(str(p) for p in err["loc"]), "msg": err["msg"]} for err in e.errors()]
+        raise ApiError(422, "VALIDATION_ERROR", "Dữ liệu gửi lên không hợp lệ", details)
+    if not MIN_FRAMES <= len(frames) <= MAX_FRAMES:
+        raise ApiError(422, "VALIDATION_ERROR", "Dữ liệu gửi lên không hợp lệ",
+                       [{"field": "frames", "msg": f"Cần từ {MIN_FRAMES} đến {MAX_FRAMES} khung hình"}])
+    data = [f.file.read() for f in frames]
+    ip = request.client.host if request.client else None
+    return ck.process_checkin(conn, session_id, user, data, m, ip, engine, ck.now_utc())

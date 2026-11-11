@@ -202,20 +202,20 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ## 1.7. Điểm danh (T15, §4.4)
 
-- [ ] `POST /sessions/{id}/challenge`: kiểm tra lớp, phiên mở, mẫu mặt hợp lệ, chưa có mặt, còn lượt
-- [ ] `POST /sessions/{id}/checkin`: multipart 5–8 khung + `meta` JSON
-- [ ] Kiểm tra `meta`: mẫu GPS 1–100, tọa độ hợp lệ, `acc > 0`, không NaN
-- [ ] Bước 1: phiên mở theo giờ server
-- [ ] Bước 2: đánh dấu nonce đã dùng bằng `UPDATE ... RETURNING` (chặn request song song)
-- [ ] Bước 3: mã phòng (khi bật)
-- [ ] Bước 4: GPS, dừng sớm khi `d > 2r` (không chạy mô hình)
-- [ ] Bước 5: liveness
-- [ ] Bước 6: so khớp khuôn mặt
-- [ ] Ghi `checkin_attempts` từ bước 3 trở đi (kèm `fail_step`, `radius_m`, mẫu thô)
-- [ ] Cờ: `LOCATION_DRIFT`, `FACE_BORDERLINE`, `MOCK_LOCATION`, `LOCATION_JUMP`, `SHARED_DEVICE`, `ROOM_TOKEN_BURST`
-- [ ] Cập nhật kết quả bằng `INSERT ... ON CONFLICT` (chỉ nâng hạng, tôn trọng quyết định tay)
-- [ ] Lưu ảnh bằng chứng (mã hóa, 30 ngày) chỉ cho lượt đáng ngờ
-- [ ] Response cho sinh viên không có điểm số và cờ
+- [x] `POST /sessions/{id}/challenge`: kiểm tra lớp, phiên mở, mẫu mặt hợp lệ, chưa có mặt, còn lượt
+- [x] `POST /sessions/{id}/checkin`: multipart 5–8 khung + `meta` JSON
+- [x] Kiểm tra `meta`: mẫu GPS 1–100, tọa độ hợp lệ, `acc > 0`, không NaN
+- [x] Bước 1: phiên mở theo giờ server
+- [x] Bước 2: đánh dấu nonce đã dùng bằng `UPDATE ... RETURNING` (chặn request song song)
+- [x] Bước 3: mã phòng (khi bật)
+- [x] Bước 4: GPS, dừng sớm khi `d > 2r` (không chạy mô hình)
+- [x] Bước 5: liveness
+- [x] Bước 6: so khớp khuôn mặt
+- [x] Ghi `checkin_attempts` từ bước 3 trở đi (kèm `fail_step`, `radius_m`, mẫu thô)
+- [x] Cờ: `LOCATION_DRIFT`, `FACE_BORDERLINE`, `MOCK_LOCATION`, `LOCATION_JUMP`, `SHARED_DEVICE`, `ROOM_TOKEN_BURST`
+- [x] Cập nhật kết quả bằng `INSERT ... ON CONFLICT` (chỉ nâng hạng, tôn trọng quyết định tay)
+- [x] Lưu ảnh bằng chứng (mã hóa, 30 ngày) chỉ cho lượt đáng ngờ
+- [x] Response cho sinh viên không có điểm số và cờ
 
 ## 1.8. Theo dõi, duyệt & báo cáo (T16, §4.5)
 
@@ -234,26 +234,26 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ## 1.10. Quy tắc nghiệp vụ
 
-- [ ] QT-01 · Tối đa 5 lượt (thử thách) mỗi sinh viên mỗi phiên (§4.4)
-- [ ] QT-02 · Nonce dùng một lần, hết hạn sau 60 s, gắn với sinh viên và phiên
-- [ ] QT-03 · Kiểm tra theo thứ tự 6 bước, dừng ở bước đầu tiên không đạt
-- [ ] QT-04 · Bảng quyết định: có mặt khi và chỉ khi không có cờ nào
-- [ ] QT-05 · Kết quả chỉ nâng hạng: vắng < đáng ngờ < có mặt
-- [ ] QT-06 · Quyết định tay của giảng viên khóa kết quả
-- [ ] QT-07 · `r = r0 + σ_gv + σ_sv`, trần `σ_sv ≤ 30 m` (§6.3)
-- [ ] QT-08 · Mở phiên cần ≥ 5 mẫu GPS có độ chính xác ≤ 20 m
+- [x] QT-01 · Tối đa 5 lượt (thử thách) mỗi sinh viên mỗi phiên (§4.4)
+- [x] QT-02 · Nonce dùng một lần, hết hạn sau 60 s, gắn với sinh viên và phiên
+- [x] QT-03 · Kiểm tra theo thứ tự 6 bước, dừng ở bước đầu tiên không đạt
+- [x] QT-04 · Bảng quyết định: có mặt khi và chỉ khi không có cờ nào
+- [x] QT-05 · Kết quả chỉ nâng hạng: vắng < đáng ngờ < có mặt
+- [x] QT-06 · Quyết định tay của giảng viên khóa kết quả
+- [x] QT-07 · `r = r0 + σ_gv + σ_sv`, trần `σ_sv ≤ 30 m` (§6.3)
+- [x] QT-08 · Mở phiên cần ≥ 5 mẫu GPS có độ chính xác ≤ 20 m
 - [x] QT-09 · Tâm phiên phải nằm trong đa giác khuôn viên
-- [ ] QT-10 · Mỗi lớp tối đa một phiên đang mở
-- [ ] QT-11 · Mở phiên thì tạo dòng "vắng" cho cả lớp
-- [ ] QT-12 · Mỗi sinh viên tối đa 1 mẫu đã duyệt + 1 mẫu chờ duyệt
-- [ ] QT-13 · Mẫu thuộc mô hình khác cấu hình hiện tại thì không hợp lệ, phải đăng ký lại
-- [ ] QT-14 · Ảnh đăng ký bị xóa ngay khi duyệt hoặc từ chối
-- [ ] QT-15 · Ảnh bằng chứng chỉ lưu cho lượt đáng ngờ, giữ 30 ngày
-- [ ] QT-16 · Mã phòng đổi mỗi 30 s, chấp nhận cửa sổ trước
-- [ ] QT-17 · So khớp trên mọi khung hình, không chỉ khung đẹp nhất
-- [ ] QT-18 · Sinh viên không bao giờ thấy điểm số hay cờ
-- [ ] QT-19 · Đối tượng ngoài phạm vi trả 404, sai vai trò trả 403
-- [ ] QT-20 · Vô hiệu hóa tài khoản thì xóa dữ liệu khuôn mặt (§4.6)
+- [x] QT-10 · Mỗi lớp tối đa một phiên đang mở
+- [x] QT-11 · Mở phiên thì tạo dòng "vắng" cho cả lớp
+- [x] QT-12 · Mỗi sinh viên tối đa 1 mẫu đã duyệt + 1 mẫu chờ duyệt
+- [x] QT-13 · Mẫu thuộc mô hình khác cấu hình hiện tại thì không hợp lệ, phải đăng ký lại
+- [x] QT-14 · Ảnh đăng ký bị xóa ngay khi duyệt hoặc từ chối
+- [x] QT-15 · Ảnh bằng chứng chỉ lưu cho lượt đáng ngờ, giữ 30 ngày
+- [x] QT-16 · Mã phòng đổi mỗi 30 s, chấp nhận cửa sổ trước
+- [x] QT-17 · So khớp trên mọi khung hình, không chỉ khung đẹp nhất
+- [x] QT-18 · Sinh viên không bao giờ thấy điểm số hay cờ
+- [x] QT-19 · Đối tượng ngoài phạm vi trả 404, sai vai trò trả 403
+- [x] QT-20 · Vô hiệu hóa tài khoản thì xóa dữ liệu khuôn mặt (§4.6)
 
 ## 1.11. Backend testing
 
@@ -267,17 +267,17 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] `test_faces_api.py`
 - [x] `test_geo.py`, `test_room_token.py`
 - [x] `test_sessions_api.py`
-- [ ] `test_checkin.py` (gồm 5 tình huống Review Focus)
+- [x] `test_checkin.py` (gồm 5 tình huống Review Focus)
 - [ ] `test_records_api.py`, `test_reports.py`
 - [ ] `test_cleanup.py`
 
 ### 1.11.1. Review Focus (plan.md)
 
-- [ ] RF-1 · Hai request cùng nonce chạy song song → chỉ 1 thành công
-- [ ] RF-2 · Phiên hết hạn giữa lúc xin thử thách và lúc gửi → `SESSION_CLOSED`, không ghi lượt
-- [ ] RF-3 · Mẫu GPS rác → 422 hoặc `GPS_ACCURACY_LOW`, không 500
-- [ ] RF-4 · Khung hình hỏng → `FACE_NOT_FOUND`; > 3 MB → 413
-- [ ] RF-5 · Giảng viên đụng lớp không dạy → 404
+- [x] RF-1 · Hai request cùng nonce chạy song song → chỉ 1 thành công
+- [x] RF-2 · Phiên hết hạn giữa lúc xin thử thách và lúc gửi → `SESSION_CLOSED`, không ghi lượt
+- [x] RF-3 · Mẫu GPS rác → 422 hoặc `GPS_ACCURACY_LOW`, không 500
+- [x] RF-4 · Khung hình hỏng → `FACE_NOT_FOUND`; > 3 MB → 413
+- [x] RF-5 · Giảng viên đụng lớp không dạy → 404
 
 ---
 
@@ -425,21 +425,21 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | DevOps (0.5) | 1/9 | Lệnh create-admin |
 | Tài liệu (0.6) | 5/9 | Đặc tả, plan, hướng dẫn cài đặt xong; còn README, văn bản đồng ý |
 | Database (1.1) | 13/13 | Migration 0001 tạo đủ 10 bảng |
-| Backend API (1.2 – 1.9) | 59/83 | Auth, Quản trị, /me, khuôn mặt, phiên (mở/đóng/mã phòng/lịch sử); còn điểm danh, theo dõi, báo cáo, tác vụ nền |
-| Quy tắc nghiệp vụ (1.10) | 1/20 | |
-| Backend testing (1.11) | 10/14 | 163 test xanh (6 test cần mô hình thật, tự bỏ qua khi thiếu) |
+| Backend API (1.2 – 1.9) | 73/83 | Auth, Quản trị, /me, khuôn mặt, phiên, điểm danh 6 bước; còn theo dõi/duyệt tay/báo cáo (T16), tác vụ nền (T17) |
+| Quy tắc nghiệp vụ (1.10) | 20/20 | Mọi quy tắc đều có test |
+| Backend testing (1.11) | 16/18 | 201 test xanh, gồm 5 tình huống Review Focus |
 | App Flutter (2.1 – 2.5) | 8/35 | Đăng nhập, trang chủ SV/GV, đồng ý, đăng ký và xóa khuôn mặt, duyệt khuôn mặt; web quản trị: người dùng, lớp, CSV, nhật ký |
 | Flutter testing (2.6) | 5/9 | 24 test xanh; còn GPS, điểm danh, thử tay trên máy thật |
 | Học máy & thí nghiệm (3) | 0% | |
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 136 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 140 mục `[ ]` (281 items)
+**Tổng cộng**: 175 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 101 mục `[ ]` (281 items)
 
 ### Bước tiếp theo khuyến nghị
 
 1. **T0 · Spike mô hình**: tải YuNet, ArcFace, MiniFASNet; chạy bằng webcam (cần người ngồi trước máy); mở khóa T8 engine ONNX
-2. **T15 · Điểm danh 6 bước**: thử thách (nonce, 5 lượt), checkin multipart, quyết định có mặt / đáng ngờ / không đạt, cờ gian lận
+2. **T18 · Màn điểm danh (sinh viên)** và **T19 · màn giảng viên**: mở phiên, theo dõi, chiếu QR; T16 backend theo dõi/duyệt tay/báo cáo
 3. **Bật Docker**: chạy `alembic upgrade head` và `create-admin --username admin` để thử app thật
 4. **Gửi nhà trường xin phép** (mục 6) và lấy tọa độ đa giác khuôn viên thật cho `campus.geojson`
 

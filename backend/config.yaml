@@ -10,8 +10,8 @@ face:
   model_name: arcface_r50_onnx_v1
   embed_file: w600k_r50.onnx   # file trong backend/models/ (xem models/README.md)
   threads: 2
-  accept_threshold: 0.0
-  suspect_threshold: 0.0
+  accept_threshold: 0.5    # tạm theo experiments/spike.md (cùng người 0,91–0,98; khác người 0,03); chốt ở Task 11
+  suspect_threshold: 0.4   # dưới mức này là không khớp; giữa 0,4 và 0,5 là sát ngưỡng
   antispoof_threshold: 0.8   # tạm theo experiments/spike.md (thật ≥ 0,95; video ≤ 0,68); chốt ở Task 11
   yaw_sign: 1            # chốt ở Task 0 trên ảnh điện thoại thật
   yaw_threshold: 0.25
