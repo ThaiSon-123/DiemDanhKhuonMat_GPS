@@ -28,8 +28,8 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> login(String email, String password) async {
-    final r = await api.post('/auth/login', data: {'email': email, 'password': password});
+  Future<void> login(String username, String password) async {
+    final r = await api.post('/auth/login', data: {'username': username, 'password': password});
     await api.store.save(r['access_token'], r['refresh_token']);
     user = Map<String, dynamic>.from(r['user']);
     notifyListeners();

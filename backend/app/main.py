@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import errors
-from app.routers import auth, me
+from app.routers import admin, auth, me
 
 MAX_BODY_BYTES = 3 * 1024 * 1024
 
@@ -12,6 +12,7 @@ app = FastAPI(title="Điểm danh khuôn mặt + GPS")
 errors.install(app)
 app.include_router(auth.router)
 app.include_router(me.router)
+app.include_router(admin.router)
 
 if os.environ.get("CORS_ORIGIN_REGEX"):
     app.add_middleware(CORSMiddleware, allow_origin_regex=os.environ["CORS_ORIGIN_REGEX"],

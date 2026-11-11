@@ -10,7 +10,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class LoginIn(BaseModel):
-    email: str = Field(max_length=254)
+    username: str = Field(max_length=50)
     password: str = Field(max_length=256)
 
 
@@ -24,21 +24,21 @@ class ChangePasswordIn(BaseModel):
 
 
 def _public(user: dict) -> dict:
-    return {k: user[k] for k in ("id", "role", "full_name", "must_change_password")}
+    return {k: user[k] for k in ("id", "role", "username", "full_name", "must_change_password")}
 
 
 @router.post("/login")
 def login(body: LoginIn, conn: psycopg.Connection = Depends(get_conn)):
-    email = body.email.strip().lower()
-    security.check_login_allowed(email)
-    user = conn.execute("SELECT * FROM users WHERE lower(email) = %s", (email,)).fetchone()
+    username = body.username.strip().lower()
+    security.check_login_allowed(username)
+    user = conn.execute("SELECT * FROM users WHERE username = %s", (username,)).fetchone()
     ok = security.verify_password(body.password, user["password_hash"] if user else security.dummy_hash())
     if not (ok and user["is_active"]):
-        left = security.record_login_failure(email)
+        left = security.record_login_failure(username)
         raise ApiError(401, "AUTH_INVALID_CREDENTIALS",
-                       f"Email hoặc mật khẩu không đúng. Còn {left} lần thử trước khi bị khóa tạm 15 phút.",
+                       f"Tên đăng nhập hoặc mật khẩu không đúng. Còn {left} lần thử trước khi bị khóa tạm 15 phút.",
                        {"remaining_attempts": left})
-    security.clear_login_failures(email)
+    security.clear_login_failures(username)
     return {**security.create_tokens(user), "user": _public(user)}
 
 

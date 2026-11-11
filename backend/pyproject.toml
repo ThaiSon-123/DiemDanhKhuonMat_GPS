@@ -12,6 +12,7 @@ dependencies = [
   "pyyaml",
   "argon2-cffi",
   "pyjwt",
+  "python-dotenv",
 ]
 
 [project.optional-dependencies]

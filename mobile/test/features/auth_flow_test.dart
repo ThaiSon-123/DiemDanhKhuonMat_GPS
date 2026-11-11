@@ -25,7 +25,7 @@ Future<void> login(WidgetTester t, Reply reply) async {
   addTearDown(t.view.reset);
   final session = Session(fakeClient(FakeHttp((_) => reply)));
   await t.pumpWidget(DiemDanhApp(router: buildRouter(session)));
-  await t.enterText(field('Email trường'), 'sv001@truong.edu.vn');
+  await t.enterText(field('Tên đăng nhập'), 'sv001');
   await t.enterText(field('Mật khẩu'), 'sai-mat-khau');
   await t.tap(find.widgetWithText(FilledButton, 'Đăng nhập'));
   await t.pumpAndSettle();
@@ -33,8 +33,8 @@ Future<void> login(WidgetTester t, Reply reply) async {
 
 void main() {
   testWidgets('sai mật khẩu: hiện thông điệp từ server', (t) async {
-    await login(t, (401, apiErr('AUTH_INVALID_CREDENTIALS', 'Email hoặc mật khẩu không đúng')));
-    expect(find.text('Email hoặc mật khẩu không đúng'), findsOneWidget);
+    await login(t, (401, apiErr('AUTH_INVALID_CREDENTIALS', 'Tên đăng nhập hoặc mật khẩu không đúng')));
+    expect(find.text('Tên đăng nhập hoặc mật khẩu không đúng'), findsOneWidget);
   });
 
   testWidgets('must_change_password: chuyển sang trang đổi mật khẩu', (t) async {

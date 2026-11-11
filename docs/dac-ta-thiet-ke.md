@@ -400,7 +400,8 @@ erDiagram
 CREATE TABLE users (
   id                   bigserial PRIMARY KEY,
   role                 text NOT NULL CHECK (role IN ('student','lecturer','admin')),
-  email                text NOT NULL UNIQUE,
+  username             text NOT NULL UNIQUE CHECK (username ~ '^[a-z0-9._-]{3,50}$'), -- tên đăng nhập, chữ thường
+  email                text UNIQUE,              -- tùy chọn, không dùng để đăng nhập
   password_hash        text NOT NULL,
   full_name            text NOT NULL,
   student_code         text UNIQUE,              -- chỉ sinh viên
@@ -664,7 +665,7 @@ campus_polygon_file: campus.geojson
 - Danh sách lớn (chỉ ở `/admin/*` và nhật ký) phân trang bằng `?page=1&size=50`, trả `{ "items": [...], "total": 123 }`. Các danh sách theo lớp hoặc phiên (dưới 200 dòng) trả hết một lần.
 - Tọa độ là số thực độ thập phân (WGS84); khoảng cách và độ chính xác tính bằng mét.
 - `device_id` là UUID do app sinh ra lần đầu cài đặt và lưu trong secure storage. Không dùng mã phần cứng (iOS không cho phép, và đó là dữ liệu định danh thiết bị không cần thiết).
-- Đăng nhập sai quá 10 lần trong 15 phút với cùng một email thì khóa tạm email đó 15 phút.
+- Đăng nhập bằng **tên đăng nhập** (`username`, chữ thường, chỉ gồm `a-z 0-9 . _ -`, 3–50 ký tự); email là thông tin tùy chọn. Sai quá 10 lần trong 15 phút với cùng một tên đăng nhập thì khóa tạm tên đó 15 phút.
 - Backend dùng Pydantic cho mọi request; FastAPI tự sinh tài liệu OpenAPI tại `/docs`, làm nguồn tham chiếu chung cho app.
 
 **Định dạng lỗi** (mọi phản hồi 4xx, 5xx):
@@ -679,7 +680,7 @@ campus_polygon_file: campus.geojson
 
 | HTTP | `code` | Khi nào |
 | --- | --- | --- |
-| 401 | `AUTH_INVALID_CREDENTIALS` | Sai email hoặc mật khẩu |
+| 401 | `AUTH_INVALID_CREDENTIALS` | Sai tên đăng nhập hoặc mật khẩu |
 | 401 | `AUTH_TOKEN_EXPIRED` | Access token hết hạn: app gọi /auth/refresh rồi gửi lại |
 | 401 | `AUTH_TOKEN_REVOKED` | Refresh token sai `token_version` hoặc tài khoản bị vô hiệu hóa: về màn đăng nhập |
 | 403 | `PASSWORD_CHANGE_REQUIRED` | Chưa đổi mật khẩu lần đầu |
@@ -724,16 +725,16 @@ campus_polygon_file: campus.geojson
 
 ```json
 // request
-{ "email": "sv01@truong.edu.vn", "password": "..." }
+{ "username": "sv001", "password": "..." }
 // 200
 { "access_token": "...", "refresh_token": "...", "expires_in": 900,
-  "user": { "id": 12, "role": "student", "full_name": "Nguyễn Văn A", "must_change_password": false } }
+  "user": { "id": 12, "role": "student", "username": "sv001", "full_name": "Nguyễn Văn A", "must_change_password": false } }
 ```
 
 `GET /me`
 
 ```json
-{ "id": 12, "role": "student", "full_name": "Nguyễn Văn A", "email": "sv01@truong.edu.vn", "student_code": "SV001",
+{ "id": 12, "role": "student", "username": "sv001", "full_name": "Nguyễn Văn A", "email": "sv01@truong.edu.vn", "student_code": "SV001",
   "consent": { "current_version": "v1", "accepted": true },
   "face": { "status": "approved", "reject_reason": null, "model_ok": true } }
 ```
@@ -843,7 +844,7 @@ campus_polygon_file: campus.geojson
 
 | `type` | Cột | Ghi chú |
 | --- | --- | --- |
-| `users` | `role,email,full_name,student_code` | `student_code` để trống với giảng viên; mật khẩu tạm sinh ngẫu nhiên, trả về trong file kết quả để quản trị viên phát cho người dùng |
+| `users` | `role,username,email,full_name,student_code` | Cột `email` không bắt buộc; `student_code` để trống với giảng viên; mật khẩu tạm sinh ngẫu nhiên, trả về trong file kết quả để quản trị viên phát cho người dùng |
 | `classes` | `code,name,semester,lecturer_email` | Giảng viên phải tồn tại |
 | `enrollments` | `class_code,semester,student_code` | Lớp và sinh viên phải tồn tại; dòng đã có thì bỏ qua |
 

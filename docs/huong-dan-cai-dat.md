@@ -475,7 +475,7 @@ Sau mỗi task chạy lại toàn bộ test: `pytest -v` (trong `backend`) và `
 - [ ] Tạo tài khoản quản trị đầu tiên (một lần)
 
   ```bash
-  docker compose exec backend python -m app.cli create-admin --email admin@<tên miền>
+  docker compose exec backend python -m app.cli create-admin --username admin
   ```
 
 - [ ] Cron dọn dữ liệu và sao lưu (`crontab -e` của user `deploy`):

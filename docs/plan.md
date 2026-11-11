@@ -20,7 +20,7 @@ Giá trị lấy nguyên từ đặc tả (mục 4, 6, 9.4, 9.5); chúng nằm t
 - GPS giảng viên: ≥ **5** mẫu có `acc ≤ 20 m`; GPS sinh viên: ≥ **3** mẫu có `acc ≤ 30 m`; khoảng thời gian mẫu ≤ **20 s**; tốc độ > **30 m/s** là bước nhảy.
 - `r = r0 + σ_gv + σ_sv`; `d ≤ r` đạt, `r < d ≤ 2r` lệch nhẹ, `d > 2r` không đạt. `r0` mặc định **20 m**, khoảng **10–50 m**. Thời hạn phiên mặc định **10 phút**.
 - Khuôn mặt: mặt rộng ≥ **100 px**; ảnh đăng ký **3–5**; khung hình điểm danh **5–8**; request ≤ **3 MB**; ảnh bằng chứng giữ **30 ngày**.
-- Token: access **15 phút**, refresh **7 ngày**; sai mật khẩu **10 lần / 15 phút** cho cùng email thì khóa **15 phút**.
+- Token: access **15 phút**, refresh **7 ngày**; sai mật khẩu **10 lần / 15 phút** cho cùng tên đăng nhập thì khóa **15 phút**. Đăng nhập bằng `username` (migration 0002); email tùy chọn.
 - Định dạng lỗi: `{"error": {"code", "message", "details"}}`; danh sách mã lỗi, mã lý do, mã cờ đúng như mục 9.5. `message` là tiếng Việt.
 - Sinh viên không bao giờ nhận điểm số thô hay cờ.
 - Đối tượng ngoài phạm vi của người gọi trả **404 `NOT_FOUND`**, không phải 403.
@@ -176,8 +176,8 @@ def test_settings_values():
 
 ```python
 def test_login_ok_returns_user(client, make_user):
-    make_user("student", email="a@x", password="Pass1234", must_change_password=False)
-    r = client.post("/auth/login", json={"email": "a@x", "password": "Pass1234"})
+    make_user("student", username="sva", password="Pass1234", must_change_password=False)
+    r = client.post("/auth/login", json={"username": "sva", "password": "Pass1234"})
     assert r.status_code == 200 and r.json()["expires_in"] == 900
     assert r.json()["user"]["role"] == "student"
 
@@ -195,7 +195,7 @@ def test_require_role(client, make_user, auth):              # sinh viên gọi 
 ```
 
 - [ ] **Step 2: Chạy** `pytest tests/test_auth.py -v` → FAIL.
-- [ ] **Step 3: Cài đặt.** Khóa đăng nhập giữ trong bộ nhớ: `dict[email, deque[timestamp]]`, kèm comment `ponytail: chỉ đúng với 1 worker uvicorn; chạy nhiều worker thì chuyển sang bảng hoặc Redis`. `change-password` tăng `token_version`, đặt `must_change_password=false`, trả token mới. Dùng thư viện `freezegun` cho test thời gian.
+- [ ] **Step 3: Cài đặt.** Khóa đăng nhập giữ trong bộ nhớ: `dict[username, deque[timestamp]]`, kèm comment `ponytail: chỉ đúng với 1 worker uvicorn; chạy nhiều worker thì chuyển sang bảng hoặc Redis`. `change-password` tăng `token_version`, đặt `must_change_password=false`, trả token mới. Dùng thư viện `freezegun` cho test thời gian.
 - [ ] **Step 4: Chạy** → PASS.
 - [ ] **Step 5: Commit** `feat(auth): đăng nhập, refresh, đổi mật khẩu, khóa tạm, phân quyền`
 
@@ -210,15 +210,15 @@ def test_require_role(client, make_user, auth):              # sinh viên gọi 
   - `audit.log(conn, actor_id: int, action: str, target: str, before: dict | None = None, after: dict | None = None, ip: str | None = None) -> None`.
   - `importer.run(conn, kind: Literal["users","classes","enrollments"], csv_text: str, dry_run: bool) -> dict` → `{"ok": bool, "errors": [{"line": int, "msg": str}], "created": int, "passwords": [{"email", "temp_password"}]}` (chỉ `users` có `passwords`). Có lỗi thì không ghi dòng nào.
   - Endpoint: CRUD `/admin/users` (có `POST /admin/users/{id}/reset-password`, `POST /admin/users/{id}/deactivate`), `/admin/classes`, `/admin/enrollments`, `POST /admin/import`, `GET /admin/audit-log` (phân trang `page`, `size`, lọc `actor_id`, `action`, `from`, `to`).
-  - Lệnh tạo quản trị viên đầu tiên: `python -m app.cli create-admin --email <email>`, in mật khẩu tạm ra màn hình, `must_change_password=true`; email đã tồn tại thì báo lỗi, thoát mã 1.
+  - Lệnh tạo quản trị viên đầu tiên: `python -m app.cli create-admin --username <tên đăng nhập> [--email <email>]`, in mật khẩu tạm ra màn hình, `must_change_password=true`; tên đăng nhập đã tồn tại thì báo lỗi, thoát mã 1.
 
 - [ ] **Step 1: Viết test thất bại**:
 
 ```python
 def test_import_users_all_or_nothing(conn):
-    csv = "role,email,full_name,student_code\nstudent,a@x,A,SV1\nstudent,a@x,B,SV2\n"
+    csv = "role,username,email,full_name,student_code\nstudent,sv1,a@x,A,SV1\nstudent,SV1,,B,SV2\n"
     res = importer.run(conn, "users", csv, dry_run=False)
-    assert res["ok"] is False and res["errors"] == [{"line": 3, "msg": "Email đã tồn tại: a@x"}]
+    assert res["ok"] is False and res["errors"] == [{"line": 3, "msg": "Tên đăng nhập trùng với dòng 2: sv1"}]
     assert conn.execute("SELECT count(*) c FROM users").fetchone()["c"] == 0
 
 def test_import_users_creates_temp_passwords(conn): ...  # 2 dòng hợp lệ → created 2, 2 mật khẩu tạm, must_change_password=true
@@ -229,7 +229,7 @@ def test_deactivate_bumps_token_version(client, ...): ...  # is_active false, to
 def test_reset_password_sets_must_change(client, ...): ...
 def test_delete_user_with_data_is_blocked(client, ...): ...  # 409, gợi ý vô hiệu hoá
 def test_audit_log_paginated(client, ...): ...           # {"items": [...], "total": n}
-def test_cli_create_admin(conn): ...                     # tạo admin, must_change_password true; chạy lần 2 cùng email → mã thoát 1
+def test_cli_create_admin(conn): ...                     # tạo admin, must_change_password true; chạy lần 2 cùng tên đăng nhập → mã thoát 1
 ```
 
 - [ ] **Step 2: Chạy** → FAIL. **Step 3: Cài đặt** (đọc CSV bằng module `csv`, chấp nhận BOM UTF-8). **Step 4: Chạy** → PASS.

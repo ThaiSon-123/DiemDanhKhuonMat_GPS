@@ -72,7 +72,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [ ] `deploy/docker-compose.yml` (db + backend + caddy)
 - [ ] `deploy/Caddyfile`: `api.<domain>` → backend, `app.<domain>` → Flutter Web, HTTPS tự động
 - [ ] `deploy/.env.example`
-- [ ] Lệnh `python -m app.cli create-admin`
+- [x] Lệnh `python -m app.cli create-admin`
 - [ ] Cron dọn dữ liệu hằng ngày
 - [ ] Cron `pg_dump` hằng ngày + xóa bản sao lưu quá 14 ngày
 - [ ] Thử khôi phục bản sao lưu thành công
@@ -122,18 +122,18 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ## 1.3. Quản trị (T3)
 
-- [ ] CRUD `/admin/users` + tìm kiếm, lọc theo vai trò, phân trang
-- [ ] `POST /admin/users/{id}/reset-password` (mật khẩu tạm, `must_change_password`)
-- [ ] `POST /admin/users/{id}/deactivate` (tăng `token_version`, xóa dữ liệu khuôn mặt)
-- [ ] Chặn xóa cứng người dùng đã có dữ liệu → 409
-- [ ] CRUD `/admin/classes` (theo học kỳ, giảng viên phụ trách)
-- [ ] CRUD `/admin/enrollments`
-- [ ] `POST /admin/import`: CSV `users` / `classes` / `enrollments`, có lỗi thì không nhập dòng nào, `dry_run`
-- [ ] Nhập `users` trả file mật khẩu tạm
-- [ ] Đọc CSV có BOM UTF-8
-- [ ] `audit.log(...)` dùng chung
-- [ ] `GET /admin/audit-log` (phân trang, lọc người thực hiện / hành động / thời gian)
-- [ ] `python -m app.cli create-admin`
+- [x] CRUD `/admin/users` + tìm kiếm, lọc theo vai trò, phân trang
+- [x] `POST /admin/users/{id}/reset-password` (mật khẩu tạm, `must_change_password`)
+- [x] `POST /admin/users/{id}/deactivate` (tăng `token_version`, xóa dữ liệu khuôn mặt)
+- [x] Chặn xóa cứng người dùng đã có dữ liệu → 409
+- [x] CRUD `/admin/classes` (theo học kỳ, giảng viên phụ trách)
+- [x] CRUD `/admin/enrollments`
+- [x] `POST /admin/import`: CSV `users` / `classes` / `enrollments`, có lỗi thì không nhập dòng nào, `dry_run`
+- [x] Nhập `users` trả file mật khẩu tạm
+- [x] Đọc CSV có BOM UTF-8
+- [x] `audit.log(...)` dùng chung
+- [x] `GET /admin/audit-log` (phân trang, lọc người thực hiện / hành động / thời gian)
+- [x] `python -m app.cli create-admin`
 
 ## 1.4. Tài khoản của tôi (T4)
 
@@ -259,7 +259,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 - [x] `test_foundation.py` (migration, envelope lỗi, 404, 413, CORS, cấu hình): 8/8 xanh
 - [x] `test_auth.py` (khóa tạm, token hết hạn, refresh bị thu hồi, đổi mật khẩu)
-- [ ] `test_admin.py`, `test_importer.py`
+- [x] `test_admin.py`, `test_importer.py`
 - [ ] `test_me.py`
 - [ ] `test_crypto.py`
 - [ ] `test_face_checks.py`, `test_face_verify.py`
@@ -422,19 +422,19 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | Backend skeleton (0.2) | 13/13 | FastAPI + Alembic + Postgres Docker chạy được, 8 test xanh |
 | App skeleton (0.3) | 10/10 | Đăng nhập, đổi mật khẩu, router theo vai trò; 7 test xanh; build web + APK OK |
 | Mô hình (0.4) | 0% | T0, cần webcam + ảnh chụp bằng điện thoại thật |
-| DevOps (0.5) | 0% | |
+| DevOps (0.5) | 1/9 | Lệnh create-admin |
 | Tài liệu (0.6) | 5/9 | Đặc tả, plan, hướng dẫn cài đặt xong; còn README, văn bản đồng ý |
 | Database (1.1) | 13/13 | Migration 0001 tạo đủ 10 bảng |
-| Backend API (1.2 – 1.9) | 8/83 | 1.2 Auth xong: login, refresh, đổi mật khẩu, khóa tạm, phân quyền; GET /me tối thiểu |
+| Backend API (1.2 – 1.9) | 20/83 | 1.2 Auth, 1.3 Quản trị (người dùng, lớp, danh sách lớp, nhập CSV, nhật ký, create-admin) xong |
 | Quy tắc nghiệp vụ (1.10) | 0/20 | |
-| Backend testing (1.11) | 2/14 | `test_foundation.py`, `test_auth.py` (18 test) |
+| Backend testing (1.11) | 3/14 | foundation, auth, admin + importer: 51 test xanh |
 | App Flutter (2.1 – 2.5) | 3/42 | Đăng nhập, đổi mật khẩu, đăng xuất |
 | Flutter testing (2.6) | 3/10 | api_client, auth_flow, build web |
 | Học máy & thí nghiệm (3) | 0% | |
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 63 mục `[x]` / 0 mục `[~]` / 3 mục `[!]` / 215 mục `[ ]` (281 items)
+**Tổng cộng**: 77 mục `[x]` / 0 mục `[~]` / 3 mục `[!]` / 201 mục `[ ]` (281 items)
 
 ### Bước tiếp theo khuyến nghị
 
@@ -454,3 +454,8 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - Chạy thử DDL và các câu SQL chính trên PostgreSQL 16 (pgserver): mọi kiểm tra đạt
 - Viết `plan.md` (21 task, TDD) và `huong-dan-cai-dat.md`
 - Bổ sung vào plan: CORS cho Flutter Web, lệnh `create-admin`
+
+### Phase 1 — Backend (2026-11-11)
+
+- 1.2 Auth, 1.3 Quản trị xong
+- Đổi cách đăng nhập: thêm cột `username` cho mọi tài khoản (migration 0002), email thành tùy chọn; CSV `users` thêm cột `username`; `create-admin --username`

@@ -1,5 +1,7 @@
 """Băm mật khẩu, JWT, khóa đăng nhập tạm và dependency phân quyền (đặc tả mục 9.3, 9.5)."""
 import os
+import re
+import secrets
 import time
 from collections import deque
 from collections.abc import Callable
@@ -36,9 +38,26 @@ def verify_password(p: str, h: str) -> bool:
         return False
 
 
+USERNAME_RE = re.compile(r"[a-z0-9._-]{3,50}")
+USERNAME_RULE = "Tên đăng nhập chỉ gồm a-z, 0-9, dấu . _ - và dài 3–50 ký tự"
+
+
+def normalize_username(s: str) -> str | None:
+    """Chữ thường, bỏ khoảng trắng hai đầu; None nếu sai định dạng."""
+    s = s.strip().lower()
+    return s if USERNAME_RE.fullmatch(s) else None
+
+
+_TEMP_ALPHABET = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"  # bỏ ký tự dễ nhầm: 0 O 1 l I
+
+
+def temp_password() -> str:
+    return "".join(secrets.choice(_TEMP_ALPHABET) for _ in range(10))
+
+
 @lru_cache
 def dummy_hash() -> str:
-    """Băm giả để email không tồn tại cũng tốn thời gian như email có thật."""
+    """Băm giả để tên đăng nhập không tồn tại cũng tốn thời gian như tài khoản có thật."""
     return hash_password("khong-ton-tai")
 
 
@@ -92,30 +111,30 @@ def reset_login_failures() -> None:
     _failures.clear()
 
 
-def _recent_failures(email: str) -> deque[float]:
+def _recent_failures(username: str) -> deque[float]:
     window = get_settings().auth.lock_minutes * 60
-    q = _failures.setdefault(email, deque())
+    q = _failures.setdefault(username, deque())
     while q and q[0] <= clock() - window:
         q.popleft()
     return q
 
 
-def check_login_allowed(email: str) -> None:
+def check_login_allowed(username: str) -> None:
     cfg = get_settings().auth
-    if len(_recent_failures(email)) >= cfg.max_failures:
+    if len(_recent_failures(username)) >= cfg.max_failures:
         raise ApiError(429, "RATE_LIMITED",
                        f"Đăng nhập sai quá nhiều lần. Hãy thử lại sau {cfg.lock_minutes} phút.")
 
 
-def record_login_failure(email: str) -> int:
+def record_login_failure(username: str) -> int:
     """Ghi một lần sai, trả số lần còn được thử trước khi bị khóa."""
-    q = _recent_failures(email)
+    q = _recent_failures(username)
     q.append(clock())
     return max(get_settings().auth.max_failures - len(q), 0)
 
 
-def clear_login_failures(email: str) -> None:
-    _failures.pop(email, None)
+def clear_login_failures(username: str) -> None:
+    _failures.pop(username, None)
 
 
 # ---- Dependency ----

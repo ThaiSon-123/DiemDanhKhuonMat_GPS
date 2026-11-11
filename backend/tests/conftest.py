@@ -70,7 +70,7 @@ def make_user(conn):
 
     def make(role="student", password="Pass1234", **kw):
         n = next(_seq)
-        row = {"role": role, "email": f"u{n}@test.vn", "password_hash": hash_password(password),
+        row = {"role": role, "username": f"user{n}", "email": f"u{n}@test.vn", "password_hash": hash_password(password),
                "full_name": f"User {n}", "must_change_password": False, **kw}
         if role == "student":
             row.setdefault("student_code", f"SV{n:04d}")

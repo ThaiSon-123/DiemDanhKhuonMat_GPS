@@ -17,7 +17,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _email = TextEditingController();
+  final _username = TextEditingController();
   final _password = TextEditingController();
   String? _error;
   bool _busy = false;
@@ -28,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
       _error = null;
     });
     try {
-      await widget.session.login(_email.text.trim(), _password.text);
+      await widget.session.login(_username.text.trim(), _password.text);
     } on ApiError catch (e) {
       if (mounted) setState(() => _error = e.message);
     } finally {
@@ -185,11 +185,11 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 14),
                 AppTextField(
-                  label: 'Email trường',
-                  icon: Icons.alternate_email,
-                  controller: _email,
-                  keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.email],
+                  label: 'Tên đăng nhập',
+                  icon: Icons.person_outline,
+                  controller: _username,
+                  keyboardType: TextInputType.visiblePassword,
+                  autofillHints: const [AutofillHints.username],
                 ),
                 const SizedBox(height: 14),
                 AppTextField(
