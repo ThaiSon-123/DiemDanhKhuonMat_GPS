@@ -17,6 +17,7 @@ dependencies = [
   "numpy",
   "onnxruntime",
   "opencv-python-headless",  # máy dev cài thêm opencv-python để spike_face.py mở được cửa sổ webcam
+  "python-multipart",  # nhận ảnh multipart ở /faces/enroll và /checkin
 ]
 
 [project.optional-dependencies]
@@ -27,3 +28,4 @@ packages = ["app"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["models: cần file mô hình .onnx trong backend/models (tự bỏ qua nếu thiếu)"]

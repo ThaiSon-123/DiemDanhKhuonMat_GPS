@@ -19,3 +19,15 @@ Ghi chú
 - MiniFASNetV2 bản ONNX do bên thứ ba chuyển đổi. Tiền xử lý: ảnh BGR, giá trị 0–255 dạng float, NCHW, softmax trên 3 lớp, lớp 1 là người thật.
 - ArcFace: ảnh căn chỉnh 112×112 theo 5 điểm mốc chuẩn, RGB, `(x − 127,5) / 127,5`, chuẩn hóa L2 đầu ra.
 - Đổi file embedding thì đổi `face.model_name` trong `config.yaml`: mẫu khuôn mặt của mô hình cũ trở thành không hợp lệ (đặc tả mục 4.2).
+
+## Ảnh mẫu cho `tests/test_onnx_engine.py`
+
+Không đưa vào git (ảnh có khuôn mặt người). Tạo lại từ ảnh mẫu của OpenCV:
+
+```powershell
+curl.exe -sL -o tests/fixtures/faces/a1.jpg https://raw.githubusercontent.com/opencv/opencv/4.x/samples/data/lena.jpg
+curl.exe -sL -o tests/fixtures/faces/b1.jpg https://raw.githubusercontent.com/opencv/opencv/4.x/samples/data/messi5.jpg
+.venv/Scripts/python.exe -c "import cv2,numpy as np;a=cv2.imread('tests/fixtures/faces/a1.jpg');h,w=a.shape[:2];m=cv2.getRotationMatrix2D((w/2,h/2),8,1.05);cv2.imwrite('tests/fixtures/faces/a2.jpg',cv2.convertScaleAbs(cv2.warpAffine(a,m,(w,h)),alpha=0.9,beta=15));cv2.imwrite('tests/fixtures/faces/blank.jpg',np.full((480,640,3),200,np.uint8))"
+```
+
+Thiếu mô hình hoặc ảnh mẫu thì các test đánh dấu `models` tự bỏ qua.

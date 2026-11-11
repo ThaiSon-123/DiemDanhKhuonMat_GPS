@@ -160,20 +160,20 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] Hai ngưỡng: chấp nhận / nghi ngờ
 - [x] `verify_checkin` (cần ≥ 3 khung đạt)
 - [x] `build_template` (mỗi ảnh phải nhất quán với các ảnh còn lại, trả vector chuẩn hóa)
-- [ ] `OnnxFaceEngine`: YuNet + căn chỉnh 112×112 + ArcFace + MiniFASNet
-- [ ] Ảnh hỏng / quá lớn không gây lỗi 500
-- [ ] Giới hạn số luồng suy luận bằng semaphore
+- [x] `OnnxFaceEngine`: YuNet + căn chỉnh 112×112 + ArcFace + MiniFASNet
+- [x] Ảnh hỏng / quá lớn không gây lỗi 500
+- [x] Giới hạn số luồng suy luận bằng semaphore
 
 ### 1.5.3. API khuôn mặt
 
-- [ ] `POST /faces/enroll` (3–5 ảnh, cần đồng ý, chỉ 1 mẫu chờ duyệt)
-- [ ] `GET /faces/pending` (giảng viên chỉ thấy sinh viên lớp mình)
-- [ ] `GET /faces/{id}/photos` (ghi nhật ký)
-- [ ] `POST /faces/{id}/review` (từ chối bắt buộc có lý do)
-- [ ] Duyệt xong: xóa ảnh, mẫu cũ chuyển `revoked`
-- [ ] `DELETE /me/face`
-- [ ] `DELETE /admin/users/{id}/face`
-- [ ] `approved_template(...)` cho luồng điểm danh
+- [x] `POST /faces/enroll` (3–5 ảnh, cần đồng ý, chỉ 1 mẫu chờ duyệt)
+- [x] `GET /faces/pending` (giảng viên chỉ thấy sinh viên lớp mình)
+- [x] `GET /faces/{id}/photos` (ghi nhật ký)
+- [x] `POST /faces/{id}/review` (từ chối bắt buộc có lý do)
+- [x] Duyệt xong: xóa ảnh, mẫu cũ chuyển `revoked`
+- [x] `DELETE /me/face`
+- [x] `DELETE /admin/users/{id}/face`
+- [x] `approved_template(...)` cho luồng điểm danh
 
 ## 1.6. Phiên điểm danh (T12 → T14, §4.3, §6)
 
@@ -263,8 +263,8 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] `test_me.py`
 - [x] `test_crypto.py`
 - [x] `test_face_checks.py`, `test_face_verify.py`
-- [ ] `test_onnx_engine.py` (`-m models`)
-- [ ] `test_faces_api.py`
+- [x] `test_onnx_engine.py` (`-m models`)
+- [x] `test_faces_api.py`
 - [x] `test_geo.py`, `test_room_token.py`
 - [ ] `test_sessions_api.py`
 - [ ] `test_checkin.py` (gồm 5 tình huống Review Focus)
@@ -425,21 +425,21 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | DevOps (0.5) | 1/9 | Lệnh create-admin |
 | Tài liệu (0.6) | 5/9 | Đặc tả, plan, hướng dẫn cài đặt xong; còn README, văn bản đồng ý |
 | Database (1.1) | 13/13 | Migration 0001 tạo đủ 10 bảng |
-| Backend API (1.2 – 1.9) | 42/83 | Auth, Quản trị, /me; mã hóa + lưu file, logic khuôn mặt (1.5.2, chờ engine ONNX), hàm vị trí, mã phòng |
+| Backend API (1.2 – 1.9) | 53/83 | Auth, Quản trị, /me, khuôn mặt (engine ONNX + đăng ký/duyệt/xóa), hàm vị trí, mã phòng |
 | Quy tắc nghiệp vụ (1.10) | 0/20 | |
-| Backend testing (1.11) | 7/14 | foundation, auth, admin, importer, me, crypto, geo, room_token, face_checks, face_verify: 124 test xanh |
+| Backend testing (1.11) | 9/14 | 145 test xanh (6 test cần mô hình thật, tự bỏ qua khi thiếu) |
 | App Flutter (2.1 – 2.5) | 3/42 | Đăng nhập, đổi mật khẩu, đăng xuất |
 | Flutter testing (2.6) | 3/10 | api_client, auth_flow, build web |
 | Học máy & thí nghiệm (3) | 0% | |
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 107 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 169 mục `[ ]` (281 items)
+**Tổng cộng**: 120 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 156 mục `[ ]` (281 items)
 
 ### Bước tiếp theo khuyến nghị
 
 1. **T0 · Spike mô hình**: tải YuNet, ArcFace, MiniFASNet; chạy bằng webcam (cần người ngồi trước máy); mở khóa T8 engine ONNX
-2. **T8 · Engine ONNX**: nối logic T7 với mô hình thật; rồi T9 API đăng ký và duyệt khuôn mặt
+2. **T10 · Màn đăng ký và duyệt khuôn mặt**: đồng ý dữ liệu, chụp 3–5 ảnh trên điện thoại; web Duyệt khuôn mặt
 3. **Bật Docker**: chạy `alembic upgrade head` và `create-admin --username admin` để thử app thật
 4. **Gửi nhà trường xin phép** (mục 6) và lấy tọa độ đa giác khuôn viên thật cho `campus.geojson`
 

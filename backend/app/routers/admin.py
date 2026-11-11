@@ -181,9 +181,8 @@ def deactivate(user_id: int, request: Request, admin=Admin, conn=Conn):
     _not_self(admin, user_id, "vô hiệu hóa")
     get_user(conn, user_id)
     conn.execute("UPDATE users SET is_active = false, token_version = token_version + 1 WHERE id = %s", (user_id,))
-    revoked = face_data.revoke_all(conn, user_id)  # mục 4.6: vô hiệu hóa thì xóa dữ liệu khuôn mặt
-    audit.log(conn, admin["id"], "user.deactivate", f"users:{user_id}", after={"faces_revoked": revoked},
-              ip=ip_of(request))
+    face_data.delete_face_data(conn, user_id, admin["id"], ip_of(request))  # mục 4.6: vô hiệu hóa thì xóa dữ liệu khuôn mặt
+    audit.log(conn, admin["id"], "user.deactivate", f"users:{user_id}", ip=ip_of(request))
     return get_user(conn, user_id)
 
 
@@ -211,9 +210,7 @@ def delete_user(user_id: int, request: Request, admin=Admin, conn=Conn):
 @router.delete("/users/{user_id}/face", status_code=204)
 def delete_face(user_id: int, request: Request, admin=Admin, conn=Conn):
     get_user(conn, user_id)
-    revoked = face_data.revoke_all(conn, user_id)
-    audit.log(conn, admin["id"], "face.delete", f"users:{user_id}", after={"faces_revoked": revoked},
-              ip=ip_of(request))
+    face_data.delete_face_data(conn, user_id, admin["id"], ip_of(request))
     return Response(status_code=204)
 
 

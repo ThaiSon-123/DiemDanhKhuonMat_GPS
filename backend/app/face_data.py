@@ -39,3 +39,21 @@ def face_state(conn: psycopg.Connection, student_id: int, model_name: str) -> di
         return {"status": "rejected", "reject_reason": by["rejected"]["reject_reason"], "model_ok": None,
                 "pending_update": False}
     return {"status": "none", "reject_reason": None, "model_ok": None, "pending_update": False}
+
+
+def delete_face_data(conn: psycopg.Connection, student_id: int, actor_id: int | None, ip: str | None = None) -> int:
+    """Thu hồi mọi mẫu, xóa embedding và ảnh, ghi nhật ký (mục 4.6). Dùng cho DELETE /me/face, quản trị, vô hiệu hóa."""
+    from app import audit  # tránh vòng import
+
+    n = revoke_all(conn, student_id)
+    audit.log(conn, actor_id, "face.delete", f"users:{student_id}", after={"faces_revoked": n}, ip=ip)
+    return n
+
+
+def approved_template(conn: psycopg.Connection, student_id: int, model_name: str):
+    """Embedding đã duyệt (np.ndarray float32) của đúng mô hình đang chạy, hoặc None (mục 4.2: đổi mô hình là đăng ký lại)."""
+    row = conn.execute("SELECT embedding_enc FROM face_templates WHERE student_id = %s AND status = 'approved' "
+                       "AND model_name = %s", (student_id, model_name)).fetchone()
+    if not row or row["embedding_enc"] is None:
+        return None
+    return crypto.embedding_from_bytes(crypto.decrypt(bytes(row["embedding_enc"])))

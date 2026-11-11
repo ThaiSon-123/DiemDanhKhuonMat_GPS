@@ -9,7 +9,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 class FaceCfg(BaseModel):
-    model_name: str
+    model_name: str            # tên ghi kèm mỗi mẫu; đổi thì mẫu cũ thành không hợp lệ
+    embed_file: str = "w600k_r50.onnx"
+    threads: int = 2           # luồng onnxruntime cho mỗi lượt suy luận
     accept_threshold: float
     suspect_threshold: float
     antispoof_threshold: float

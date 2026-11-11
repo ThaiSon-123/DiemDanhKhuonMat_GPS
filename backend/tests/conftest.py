@@ -1,6 +1,7 @@
 import base64
 import itertools
 import os
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -40,6 +41,10 @@ def database_url():
 
 @pytest.fixture
 def conn(database_url):
+    # id đánh lại từ 1 mỗi test nên thư mục ảnh (faces/<id>) cũng phải dọn theo.
+    storage = Path(os.environ["STORAGE_DIR"])
+    shutil.rmtree(storage, ignore_errors=True)
+    storage.mkdir(parents=True, exist_ok=True)
     with psycopg.connect(database_url, autocommit=True, row_factory=dict_row) as c:
         c.execute(f"TRUNCATE {TABLES} RESTART IDENTITY CASCADE")
         yield c

@@ -32,6 +32,8 @@ const _verbs = <String, (String, IconData, Color, Color)>{
   'user.delete': ('xóa tài khoản', Icons.delete_outline, Color(0xFFFFF1F2), Color(0xFFE11D48)),
   'face.delete': ('xóa dữ liệu khuôn mặt của', Icons.delete_outline, Color(0xFFFFF1F2), Color(0xFFE11D48)),
   'face.review': ('duyệt khuôn mặt của', Icons.check, Color(0xFFECFDF5), Color(0xFF059669)),
+  'face.enroll': ('gửi ảnh đăng ký khuôn mặt', Icons.face_outlined, Color(0xFFEEF2FF), Color(0xFF4F46E5)),
+  'face.photos.view': ('xem ảnh đăng ký', Icons.visibility_outlined, Color(0xFFF1F5F9), Color(0xFF475569)),
   'class.create': ('tạo lớp', Icons.add_box_outlined, Color(0xFFF5F3FF), Color(0xFF6D28D9)),
   'class.update': ('sửa lớp', Icons.edit_outlined, Color(0xFFF5F3FF), Color(0xFF6D28D9)),
   'class.delete': ('xóa lớp', Icons.delete_outline, Color(0xFFFFF1F2), Color(0xFFE11D48)),

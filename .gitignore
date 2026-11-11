@@ -8,6 +8,7 @@ __pycache__/
 .env
 backend/storage/
 backend/models/*.onnx
+backend/tests/fixtures/faces/*.jpg
 experiments/data/
 # Flutter
 mobile/build/
