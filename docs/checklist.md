@@ -193,12 +193,12 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ### 1.6.3. API phiên
 
-- [ ] `POST /sessions`: GPS ≥ 5 mẫu ≤ 20 m, tâm trong khuôn viên, r0 trong 10–50 m
-- [ ] Tạo sẵn dòng `absent` cho cả lớp khi mở phiên
-- [ ] Tự đóng phiên quá hạn còn treo khi mở phiên mới
-- [ ] `POST /sessions/{id}/close`
-- [ ] `GET /sessions/{id}/room-token` (+ `ROOM_CHECK_DISABLED`)
-- [ ] `GET /classes/{id}/sessions` (lịch sử + số có mặt / vắng)
+- [x] `POST /sessions`: GPS ≥ 5 mẫu ≤ 20 m, tâm trong khuôn viên, r0 trong 10–50 m
+- [x] Tạo sẵn dòng `absent` cho cả lớp khi mở phiên
+- [x] Tự đóng phiên quá hạn còn treo khi mở phiên mới
+- [x] `POST /sessions/{id}/close`
+- [x] `GET /sessions/{id}/room-token` (+ `ROOM_CHECK_DISABLED`)
+- [x] `GET /classes/{id}/sessions` (lịch sử + số có mặt / vắng)
 
 ## 1.7. Điểm danh (T15, §4.4)
 
@@ -242,7 +242,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [ ] QT-06 · Quyết định tay của giảng viên khóa kết quả
 - [ ] QT-07 · `r = r0 + σ_gv + σ_sv`, trần `σ_sv ≤ 30 m` (§6.3)
 - [ ] QT-08 · Mở phiên cần ≥ 5 mẫu GPS có độ chính xác ≤ 20 m
-- [ ] QT-09 · Tâm phiên phải nằm trong đa giác khuôn viên
+- [x] QT-09 · Tâm phiên phải nằm trong đa giác khuôn viên
 - [ ] QT-10 · Mỗi lớp tối đa một phiên đang mở
 - [ ] QT-11 · Mở phiên thì tạo dòng "vắng" cho cả lớp
 - [ ] QT-12 · Mỗi sinh viên tối đa 1 mẫu đã duyệt + 1 mẫu chờ duyệt
@@ -266,7 +266,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] `test_onnx_engine.py` (`-m models`)
 - [x] `test_faces_api.py`
 - [x] `test_geo.py`, `test_room_token.py`
-- [ ] `test_sessions_api.py`
+- [x] `test_sessions_api.py`
 - [ ] `test_checkin.py` (gồm 5 tình huống Review Focus)
 - [ ] `test_records_api.py`, `test_reports.py`
 - [ ] `test_cleanup.py`
@@ -425,21 +425,21 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | DevOps (0.5) | 1/9 | Lệnh create-admin |
 | Tài liệu (0.6) | 5/9 | Đặc tả, plan, hướng dẫn cài đặt xong; còn README, văn bản đồng ý |
 | Database (1.1) | 13/13 | Migration 0001 tạo đủ 10 bảng |
-| Backend API (1.2 – 1.9) | 53/83 | Auth, Quản trị, /me, khuôn mặt (engine ONNX + đăng ký/duyệt/xóa), hàm vị trí, mã phòng |
-| Quy tắc nghiệp vụ (1.10) | 0/20 | |
-| Backend testing (1.11) | 9/14 | 145 test xanh (6 test cần mô hình thật, tự bỏ qua khi thiếu) |
+| Backend API (1.2 – 1.9) | 59/83 | Auth, Quản trị, /me, khuôn mặt, phiên (mở/đóng/mã phòng/lịch sử); còn điểm danh, theo dõi, báo cáo, tác vụ nền |
+| Quy tắc nghiệp vụ (1.10) | 1/20 | |
+| Backend testing (1.11) | 10/14 | 163 test xanh (6 test cần mô hình thật, tự bỏ qua khi thiếu) |
 | App Flutter (2.1 – 2.5) | 8/35 | Đăng nhập, trang chủ SV/GV, đồng ý, đăng ký và xóa khuôn mặt, duyệt khuôn mặt; web quản trị: người dùng, lớp, CSV, nhật ký |
 | Flutter testing (2.6) | 5/9 | 24 test xanh; còn GPS, điểm danh, thử tay trên máy thật |
 | Học máy & thí nghiệm (3) | 0% | |
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 128 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 148 mục `[ ]` (281 items)
+**Tổng cộng**: 136 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 140 mục `[ ]` (281 items)
 
 ### Bước tiếp theo khuyến nghị
 
 1. **T0 · Spike mô hình**: tải YuNet, ArcFace, MiniFASNet; chạy bằng webcam (cần người ngồi trước máy); mở khóa T8 engine ONNX
-2. **T14 · Mở phiên**: POST /sessions (GPS giảng viên, khuôn viên), đóng phiên, mã phòng; rồi T15 điểm danh 6 bước
+2. **T15 · Điểm danh 6 bước**: thử thách (nonce, 5 lượt), checkin multipart, quyết định có mặt / đáng ngờ / không đạt, cờ gian lận
 3. **Bật Docker**: chạy `alembic upgrade head` và `create-admin --username admin` để thử app thật
 4. **Gửi nhà trường xin phép** (mục 6) và lấy tọa độ đa giác khuôn viên thật cho `campus.geojson`
 
