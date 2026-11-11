@@ -1,7 +1,7 @@
 """Trạng thái và thu hồi dữ liệu khuôn mặt, dùng chung cho quản trị, /me và đăng ký khuôn mặt."""
-import shutil
-
 import psycopg
+
+from app import crypto
 
 # Biểu thức SQL cho cột face_status của một dòng users bí danh `u` (đặc tả mục 9.5: none/pending/approved/rejected).
 FACE_STATUS_SQL = """COALESCE((
@@ -19,7 +19,7 @@ def revoke_all(conn: psycopg.Connection, student_id: int) -> int:
     conn.execute(f"UPDATE face_templates SET status = 'revoked', embedding_enc = NULL, photos_path = NULL "
                  f"WHERE {live}", (student_id,))
     for p in filter(None, paths):
-        shutil.rmtree(p, ignore_errors=True)
+        crypto.delete_tree(p)  # photos_path tương đối với STORAGE_DIR
     return len(paths)
 
 

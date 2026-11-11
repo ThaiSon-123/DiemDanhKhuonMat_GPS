@@ -146,9 +146,9 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ### 1.5.1. Mã hóa & lưu trữ
 
-- [ ] `encrypt` / `decrypt` AES-GCM
-- [ ] `save_blob` / `load_blob` / `delete_blob` dưới `STORAGE_DIR`, chặn đường dẫn `../`
-- [ ] Chuyển đổi embedding float32 ↔ bytes
+- [x] `encrypt` / `decrypt` AES-GCM
+- [x] `save_blob` / `load_blob` / `delete_blob` dưới `STORAGE_DIR`, chặn đường dẫn `../`
+- [x] Chuyển đổi embedding float32 ↔ bytes
 
 ### 1.5.2. Pipeline nhận diện
 
@@ -179,17 +179,17 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ### 1.6.1. Hàm vị trí
 
-- [ ] `haversine_m`
-- [ ] `aggregate`: lọc theo độ chính xác, đủ số mẫu, span ≤ 20 s, lấy trung vị
-- [ ] `adaptive_radius`, `classify` (ok / drift / far)
-- [ ] `has_jump`, `jump_from_previous` (> 30 m/s)
-- [ ] `load_campus`, `in_polygon`
-- [ ] `suggest_recenter`, `recenter`
+- [x] `haversine_m`
+- [x] `aggregate`: lọc theo độ chính xác, đủ số mẫu, span ≤ 20 s, lấy trung vị
+- [x] `adaptive_radius`, `classify` (ok / drift / far)
+- [x] `has_jump`, `jump_from_previous` (> 30 m/s)
+- [x] `load_campus`, `in_polygon`
+- [x] `suggest_recenter`, `recenter`
 
 ### 1.6.2. Mã phòng (§7.2)
 
-- [ ] `room_code` (HMAC-SHA256, 8 ký tự base32)
-- [ ] `verify_room_code` (cửa sổ hiện tại + cửa sổ trước)
+- [x] `room_code` (HMAC-SHA256, 8 ký tự base32)
+- [x] `verify_room_code` (cửa sổ hiện tại + cửa sổ trước)
 
 ### 1.6.3. API phiên
 
@@ -261,11 +261,11 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] `test_auth.py` (khóa tạm, token hết hạn, refresh bị thu hồi, đổi mật khẩu)
 - [x] `test_admin.py`, `test_importer.py`
 - [x] `test_me.py`
-- [ ] `test_crypto.py`
+- [x] `test_crypto.py`
 - [ ] `test_face_checks.py`, `test_face_verify.py`
 - [ ] `test_onnx_engine.py` (`-m models`)
 - [ ] `test_faces_api.py`
-- [ ] `test_geo.py`, `test_room_token.py`
+- [x] `test_geo.py`, `test_room_token.py`
 - [ ] `test_sessions_api.py`
 - [ ] `test_checkin.py` (gồm 5 tình huống Review Focus)
 - [ ] `test_records_api.py`, `test_reports.py`
@@ -425,23 +425,23 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | DevOps (0.5) | 1/9 | Lệnh create-admin |
 | Tài liệu (0.6) | 5/9 | Đặc tả, plan, hướng dẫn cài đặt xong; còn README, văn bản đồng ý |
 | Database (1.1) | 13/13 | Migration 0001 tạo đủ 10 bảng |
-| Backend API (1.2 – 1.9) | 23/83 | 1.2 Auth, 1.3 Quản trị, 1.4 /me (trừ /me/attendance thuộc T16) xong |
+| Backend API (1.2 – 1.9) | 34/83 | Auth, Quản trị, /me; mã hóa + lưu file (1.5.1), hàm vị trí (1.6.1), mã phòng (1.6.2) |
 | Quy tắc nghiệp vụ (1.10) | 0/20 | |
-| Backend testing (1.11) | 4/14 | foundation, auth, admin, importer, me: 64 test xanh |
+| Backend testing (1.11) | 6/14 | foundation, auth, admin, importer, me, crypto, geo, room_token: 102 test xanh |
 | App Flutter (2.1 – 2.5) | 3/42 | Đăng nhập, đổi mật khẩu, đăng xuất |
 | Flutter testing (2.6) | 3/10 | api_client, auth_flow, build web |
 | Học máy & thí nghiệm (3) | 0% | |
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 81 mục `[x]` / 0 mục `[~]` / 3 mục `[!]` / 197 mục `[ ]` (281 items)
+**Tổng cộng**: 94 mục `[x]` / 0 mục `[~]` / 3 mục `[!]` / 184 mục `[ ]` (281 items)
 
 ### Bước tiếp theo khuyến nghị
 
-1. **T1 · Backend skeleton**: công cụ đã đủ, bắt đầu được ngay
-2. **T5 · App skeleton**: Flutter và máy ảo Android đã sẵn sàng
-3. **T0 · Spike mô hình**: làm song song, cần người ngồi trước webcam và ảnh chụp bằng điện thoại
-4. **Gửi nhà trường xin phép** ngay từ bây giờ (mục 6), vì thường mất nhiều thời gian nhất
+1. **T7 · Kiểm tra khuôn mặt thuần**: độ sáng, độ nét, kích thước mặt, góc quay; không cần mô hình
+2. **T0 · Spike mô hình**: cần người ngồi trước webcam và ảnh chụp bằng điện thoại; chặn T8, T11
+3. **Bật Docker**: chạy `alembic upgrade head` và `create-admin --username admin` để thử app thật
+4. **Gửi nhà trường xin phép** (mục 6) và lấy tọa độ đa giác khuôn viên thật cho `campus.geojson`
 
 ---
 
@@ -457,5 +457,5 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ### Phase 1 — Backend (2026-11-11)
 
-- 1.2 Auth, 1.3 Quản trị, 1.4 /me xong
+- 1.2 Auth, 1.3 Quản trị, 1.4 /me, T6 mã hóa, T12 hàm vị trí, T13 mã phòng xong
 - Đổi cách đăng nhập: thêm cột `username` cho mọi tài khoản (migration 0002), email thành tùy chọn; CSV `users` thêm cột `username`; `create-admin --username`

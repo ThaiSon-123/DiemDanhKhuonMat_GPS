@@ -293,7 +293,8 @@ Làm theo thứ tự từ trên xuống. Mỗi bước có lệnh chạy và **k
 
   ```powershell
   flutter run -d emulator-5554 --dart-define=API_URL=http://10.0.2.2:8000   # máy ảo Android: 10.0.2.2 trỏ về máy tính
-  flutter run -d chrome --dart-define=API_URL=http://localhost:8000          # bản web
+  flutter run -d web-server --web-port 8091 --dart-define=API_URL=http://localhost:8000   # bản web: mở http://localhost:8091 (lần đầu chờ ~15 s)
+  # Không dùng `-d chrome` trên Windows: Chrome gỡ lỗi hay không kết nối được ($dwdsSseHandler) nên trang trắng.
   ```
   Mong đợi: app mở được và gọi được `/docs` hoặc `/auth/login`.
 
