@@ -42,10 +42,28 @@ void main() {
     expect(find.text('Đặt mật khẩu mới'), findsOneWidget);
   });
 
-  testWidgets('đăng nhập giảng viên: vào trang chủ giảng viên, đăng xuất về trang đăng nhập', (t) async {
-    await login(t, (200, loginOk('lecturer')));
-    expect(find.textContaining('Giảng viên'), findsWidgets);
-    await t.tap(find.byTooltip('Đăng xuất'));
+  testWidgets('đăng nhập giảng viên: vào Lớp của tôi, đăng xuất từ tab Tài khoản', (t) async {
+    t.view.physicalSize = const Size(390, 844);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    final session = Session(fakeClient(FakeHttp((o) => switch (o.path) {
+          '/auth/login' => (200, loginOk('lecturer')),
+          '/me/classes' => (200, [
+              {'id': 1, 'code': 'IT4343', 'name': 'Thị giác máy tính', 'semester': '2026-1', 'student_count': 48,
+               'open_session': null},
+            ]),
+          _ => (404, apiErr('NOT_FOUND', 'Không tìm thấy')),
+        })));
+    await t.pumpWidget(DiemDanhApp(router: buildRouter(session)));
+    await t.enterText(field('Tên đăng nhập'), 'ducdm');
+    await t.enterText(field('Mật khẩu'), 'Pass1234');
+    await t.tap(find.widgetWithText(FilledButton, 'Đăng nhập'));
+    await t.pumpAndSettle();
+    expect(find.text('Lớp của tôi'), findsOneWidget);
+    expect(find.text('Thị giác máy tính'), findsOneWidget);
+    await t.tap(find.text('Tài khoản'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Đăng xuất'));
     await t.pumpAndSettle();
     expect(find.widgetWithText(FilledButton, 'Đăng nhập'), findsOneWidget);
   });

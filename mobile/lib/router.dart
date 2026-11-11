@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'core/session.dart';
 import 'features/auth/change_password_page.dart';
 import 'features/auth/login_page.dart';
-import 'features/home/role_home_page.dart';
+import 'features/admin/admin_shell.dart';
+import 'features/lecturer/lecturer_home_page.dart';
+import 'features/student/student_home_page.dart';
 
 const homeByRole = {'student': '/student', 'lecturer': '/lecturer', 'admin': '/admin'};
 
@@ -20,7 +22,8 @@ GoRouter buildRouter(Session session) => GoRouter(
       routes: [
         GoRoute(path: '/login', builder: (_, _) => LoginPage(session: session)),
         GoRoute(path: '/change-password', builder: (_, _) => ChangePasswordPage(session: session)),
-        for (final e in {'student': 'Sinh viên', 'lecturer': 'Giảng viên', 'admin': 'Quản trị viên'}.entries)
-          GoRoute(path: homeByRole[e.key]!, builder: (_, _) => RoleHomePage(session: session, roleName: e.value)),
+        GoRoute(path: '/student', builder: (_, _) => StudentHomePage(session: session)),
+        GoRoute(path: '/lecturer', builder: (_, _) => LecturerHomePage(session: session)),
+        GoRoute(path: '/admin', builder: (_, _) => AdminShell(session: session)),
       ],
     );

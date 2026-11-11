@@ -69,6 +69,9 @@ def test_list_users_search_filter_paginate(client, admin, make_user, conn):
     assert client.get("/admin/users", headers=h, params={"q": s["username"]}).json()["items"][0]["id"] == s["id"]
     assert item["id"] == s["id"] and item["face_status"] == "pending" and "password_hash" not in item
     assert client.get("/admin/users", headers=h, params={"face": "none", "role": "student"}).json()["total"] == 3
+    conn.execute("UPDATE users SET is_active = false WHERE id = %s", (s["id"],))
+    assert client.get("/admin/users", headers=h, params={"active": "false"}).json()["items"][0]["id"] == s["id"]
+    assert client.get("/admin/users", headers=h, params={"active": "true", "role": "student"}).json()["total"] == 3
 
 
 def test_update_user(client, admin, make_user):

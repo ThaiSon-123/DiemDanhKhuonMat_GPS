@@ -99,7 +99,7 @@ def check_email(email: str | None) -> str | None:
 @router.get("/users")
 def list_users(q: str | None = None, role: str | None = None,
                face: Literal["none", "pending", "approved", "rejected"] | None = None,
-               page=Depends(page_params), _=Admin, conn=Conn):
+               active: bool | None = None, page=Depends(page_params), _=Admin, conn=Conn):
     select = f"SELECT * FROM (SELECT {USER_COLS}, {face_data.FACE_STATUS_SQL} AS face_status FROM users u) x"
     where, params = [], []
     if q:
@@ -111,6 +111,9 @@ def list_users(q: str | None = None, role: str | None = None,
     if face:
         where.append("face_status = %s")
         params.append(face)
+    if active is not None:
+        where.append("is_active = %s")
+        params.append(active)
     return paginate(conn, select, where, params, "id", page)
 
 
