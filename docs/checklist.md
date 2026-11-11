@@ -137,9 +137,9 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ## 1.4. Tài khoản của tôi (T4)
 
-- [ ] `GET /me` (đồng ý, trạng thái khuôn mặt, `model_ok`, `pending_update`)
-- [ ] `GET /me/classes` (sinh viên: `open_session`; giảng viên: `student_count`)
-- [ ] `POST /me/consent` (đúng phiên bản hiện hành)
+- [x] `GET /me` (đồng ý, trạng thái khuôn mặt, `model_ok`, `pending_update`)
+- [x] `GET /me/classes` (sinh viên: `open_session`; giảng viên: `student_count`)
+- [x] `POST /me/consent` (đúng phiên bản hiện hành)
 - [ ] `GET /me/attendance` (T16)
 
 ## 1.5. Khuôn mặt (T6 → T9, §4.2, §5)
@@ -260,7 +260,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] `test_foundation.py` (migration, envelope lỗi, 404, 413, CORS, cấu hình): 8/8 xanh
 - [x] `test_auth.py` (khóa tạm, token hết hạn, refresh bị thu hồi, đổi mật khẩu)
 - [x] `test_admin.py`, `test_importer.py`
-- [ ] `test_me.py`
+- [x] `test_me.py`
 - [ ] `test_crypto.py`
 - [ ] `test_face_checks.py`, `test_face_verify.py`
 - [ ] `test_onnx_engine.py` (`-m models`)
@@ -425,16 +425,16 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | DevOps (0.5) | 1/9 | Lệnh create-admin |
 | Tài liệu (0.6) | 5/9 | Đặc tả, plan, hướng dẫn cài đặt xong; còn README, văn bản đồng ý |
 | Database (1.1) | 13/13 | Migration 0001 tạo đủ 10 bảng |
-| Backend API (1.2 – 1.9) | 20/83 | 1.2 Auth, 1.3 Quản trị (người dùng, lớp, danh sách lớp, nhập CSV, nhật ký, create-admin) xong |
+| Backend API (1.2 – 1.9) | 23/83 | 1.2 Auth, 1.3 Quản trị, 1.4 /me (trừ /me/attendance thuộc T16) xong |
 | Quy tắc nghiệp vụ (1.10) | 0/20 | |
-| Backend testing (1.11) | 3/14 | foundation, auth, admin + importer: 51 test xanh |
+| Backend testing (1.11) | 4/14 | foundation, auth, admin, importer, me: 64 test xanh |
 | App Flutter (2.1 – 2.5) | 3/42 | Đăng nhập, đổi mật khẩu, đăng xuất |
 | Flutter testing (2.6) | 3/10 | api_client, auth_flow, build web |
 | Học máy & thí nghiệm (3) | 0% | |
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 77 mục `[x]` / 0 mục `[~]` / 3 mục `[!]` / 201 mục `[ ]` (281 items)
+**Tổng cộng**: 81 mục `[x]` / 0 mục `[~]` / 3 mục `[!]` / 197 mục `[ ]` (281 items)
 
 ### Bước tiếp theo khuyến nghị
 
@@ -457,5 +457,5 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ### Phase 1 — Backend (2026-11-11)
 
-- 1.2 Auth, 1.3 Quản trị xong
+- 1.2 Auth, 1.3 Quản trị, 1.4 /me xong
 - Đổi cách đăng nhập: thêm cột `username` cho mọi tài khoản (migration 0002), email thành tùy chọn; CSV `users` thêm cột `username`; `create-admin --username`

@@ -21,3 +21,21 @@ def revoke_all(conn: psycopg.Connection, student_id: int) -> int:
     for p in filter(None, paths):
         shutil.rmtree(p, ignore_errors=True)
     return len(paths)
+
+
+def face_state(conn: psycopg.Connection, student_id: int, model_name: str) -> dict:
+    """Trạng thái khuôn mặt cho /me (đặc tả mục 9.5). model_ok chỉ có nghĩa khi đã có mẫu được duyệt."""
+    rows = conn.execute("SELECT status, model_name, reject_reason FROM face_templates "
+                        "WHERE student_id = %s AND status <> 'revoked' ORDER BY id DESC", (student_id,)).fetchall()
+    by = {}
+    for r in rows:
+        by.setdefault(r["status"], r)  # mẫu mới nhất của mỗi trạng thái
+    if "approved" in by:
+        return {"status": "approved", "reject_reason": None,
+                "model_ok": by["approved"]["model_name"] == model_name, "pending_update": "pending" in by}
+    if "pending" in by:
+        return {"status": "pending", "reject_reason": None, "model_ok": None, "pending_update": False}
+    if "rejected" in by:
+        return {"status": "rejected", "reject_reason": by["rejected"]["reject_reason"], "model_ok": None,
+                "pending_update": False}
+    return {"status": "none", "reject_reason": None, "model_ok": None, "pending_update": False}

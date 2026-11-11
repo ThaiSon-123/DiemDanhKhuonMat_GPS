@@ -170,7 +170,9 @@ def test_must_change_password_blocks_other_routes(client, make_user, auth):
 
 def test_me_returns_account(client, make_user, auth):
     u = make_user("student", username="sva", email="a@x.vn")
-    assert client.get("/me", headers=auth(u)).json() == {
+    me = client.get("/me", headers=auth(u)).json()
+    assert {k: me[k] for k in ("id", "role", "username", "full_name", "email", "student_code",
+                               "must_change_password")} == {
         "id": u["id"], "role": "student", "username": "sva", "full_name": u["full_name"], "email": "a@x.vn",
         "student_code": u["student_code"], "must_change_password": False}
 

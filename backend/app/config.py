@@ -50,8 +50,13 @@ class AuthCfg(BaseModel):
     lock_minutes: int = 15
 
 
+class ConsentCfg(BaseModel):
+    current_version: str = "v1"
+
+
 class Settings(BaseModel):
     auth: AuthCfg = AuthCfg()
+    consent: ConsentCfg = ConsentCfg()
     face: FaceCfg
     gps: GpsCfg
     session: SessionCfg
