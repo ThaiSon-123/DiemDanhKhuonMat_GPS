@@ -10,7 +10,7 @@ face:
   model_name: arcface_r50_onnx_v1
   accept_threshold: 0.0
   suspect_threshold: 0.0
-  antispoof_threshold: 0.0
+  antispoof_threshold: 0.8   # tạm theo experiments/spike.md (thật ≥ 0,95; video ≤ 0,68); chốt ở Task 11
   yaw_sign: 1            # chốt ở Task 0 trên ảnh điện thoại thật
   yaw_threshold: 0.25
   min_brightness: 60

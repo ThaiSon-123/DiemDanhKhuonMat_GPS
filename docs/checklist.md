@@ -56,14 +56,14 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ### 0.4. Mô hình học máy (T0)
 
-- [ ] Tải YuNet, ArcFace `w600k_r50`, MobileFaceNet `w600k_mbf`, MiniFASNetV2 vào `backend/models/`
-- [ ] `models/README.md`: nguồn, giấy phép, sha256
-- [ ] `experiments/spike_face.py` chạy bằng webcam
+- [x] Tải YuNet, ArcFace `w600k_r50`, MobileFaceNet `w600k_mbf`, MiniFASNetV2 vào `backend/models/`
+- [x] `models/README.md`: nguồn, giấy phép, sha256
+- [x] `experiments/spike_face.py` chạy bằng webcam (+ engine ONNX dùng chung với backend)
 - [ ] Đo `yaw_sign`, `yaw_threshold` trên ảnh chụp bằng camera trước của điện thoại thật
 - [ ] Đo `min_brightness`, `min_sharpness`
-- [ ] Spoof score của mặt thật / ảnh in / màn hình điện thoại / video
-- [ ] Ghi kết quả vào `experiments/spike.md`
-- [ ] 🚦 Cổng 0: anti-spoofing tách được thật / giả; cosine cùng người > khác người rõ rệt
+- [x] Spoof score của mặt thật / ảnh in / màn hình điện thoại / video (thật ≥ 0,95; giả ≤ 0,68)
+- [~] Ghi kết quả vào `experiments/spike.md` (còn góc quay ảnh điện thoại, cosine khác người)
+- [~] 🚦 Cổng 0: anti-spoofing tách được thật / giả (ĐẠT); cosine cùng người > khác người rõ rệt (chưa đo)
 
 ### 0.5. DevOps (T20)
 
@@ -421,7 +421,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | Công cụ (0.1) | 6/7 | Đủ công cụ; còn chuẩn bị máy test thật |
 | Backend skeleton (0.2) | 13/13 | FastAPI + Alembic + Postgres Docker chạy được, 8 test xanh |
 | App skeleton (0.3) | 10/10 | Đăng nhập, đổi mật khẩu, router theo vai trò; 7 test xanh; build web + APK OK |
-| Mô hình (0.4) | 0% | T0, cần webcam + ảnh chụp bằng điện thoại thật |
+| Mô hình (0.4) | 4/8 | Anti-spoofing đạt Cổng 0 trên webcam (ngưỡng tạm 0,8); còn ảnh điện thoại (yaw) và cosine khác người |
 | DevOps (0.5) | 1/9 | Lệnh create-admin |
 | Tài liệu (0.6) | 5/9 | Đặc tả, plan, hướng dẫn cài đặt xong; còn README, văn bản đồng ý |
 | Database (1.1) | 13/13 | Migration 0001 tạo đủ 10 bảng |
@@ -434,7 +434,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 103 mục `[x]` / 0 mục `[~]` / 3 mục `[!]` / 175 mục `[ ]` (281 items)
+**Tổng cộng**: 107 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 169 mục `[ ]` (281 items)
 
 ### Bước tiếp theo khuyến nghị
 
