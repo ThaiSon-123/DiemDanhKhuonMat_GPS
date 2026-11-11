@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 
 # Bí mật cho test, đặt trước khi import app.
-os.environ.setdefault("JWT_SECRET", "test-secret")
+os.environ.setdefault("JWT_SECRET", "test-secret-" + "x" * 32)
 os.environ.setdefault("DATA_KEY", base64.b64encode(b"\0" * 32).decode())
 os.environ.setdefault("STORAGE_DIR", tempfile.mkdtemp())
 os.environ["CORS_ORIGIN_REGEX"] = r"^http://localhost(:\d+)?$"
@@ -47,9 +47,18 @@ def conn(database_url):
 
 @pytest.fixture
 def client(conn):
+    from app import security
     from app.main import app
+    security.reset_login_failures()
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture
+def auth():
+    """Header Bearer kèm access token hợp lệ của người dùng."""
+    from app.security import create_tokens
+    return lambda user: {"Authorization": f"Bearer {create_tokens(user)['access_token']}"}
 
 
 _seq = itertools.count(1)
@@ -57,10 +66,12 @@ _seq = itertools.count(1)
 
 @pytest.fixture
 def make_user(conn):
-    def make(role="student", **kw):
+    from app.security import hash_password
+
+    def make(role="student", password="Pass1234", **kw):
         n = next(_seq)
-        row = {"role": role, "email": f"u{n}@test.vn", "password_hash": "x", "full_name": f"User {n}",
-               "must_change_password": False, **kw}
+        row = {"role": role, "email": f"u{n}@test.vn", "password_hash": hash_password(password),
+               "full_name": f"User {n}", "must_change_password": False, **kw}
         if role == "student":
             row.setdefault("student_code", f"SV{n:04d}")
         cols = ", ".join(row)

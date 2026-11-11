@@ -1,4 +1,9 @@
 # Đặc tả mục 9.4 + Global Constraints trong docs/plan.md. Ngưỡng mô hình chốt ở Task 11.
+auth:
+  access_minutes: 15
+  refresh_days: 7
+  max_failures: 10    # sai 10 lần / 15 phút cùng email thì khóa 15 phút
+  lock_minutes: 15
 face:
   model_name: arcface_r50_onnx_v1
   accept_threshold: 0.0

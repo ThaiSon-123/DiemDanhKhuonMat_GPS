@@ -111,14 +111,14 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ## 1.2. Auth & Account API (T2)
 
-- [ ] `POST /auth/login` (access 15 phút, refresh 7 ngày)
-- [ ] `POST /auth/refresh` (kiểm tra `token_version`, `is_active`)
-- [ ] `POST /auth/change-password` (tăng `token_version`, trả cặp token mới)
-- [ ] Băm mật khẩu argon2
-- [ ] Khóa tạm 15 phút sau 10 lần sai trong 15 phút → 429 `RATE_LIMITED`
-- [ ] Dependency `current_user` + `require_role(...)`
-- [ ] Chặn mọi route khi `must_change_password` (trừ đổi mật khẩu và `GET /me`) → 403 `PASSWORD_CHANGE_REQUIRED`
-- [ ] Tài khoản bị vô hiệu hóa không đăng nhập / refresh được
+- [x] `POST /auth/login` (access 15 phút, refresh 7 ngày)
+- [x] `POST /auth/refresh` (kiểm tra `token_version`, `is_active`)
+- [x] `POST /auth/change-password` (tăng `token_version`, trả cặp token mới)
+- [x] Băm mật khẩu argon2
+- [x] Khóa tạm 15 phút sau 10 lần sai trong 15 phút → 429 `RATE_LIMITED`
+- [x] Dependency `current_user` + `require_role(...)`
+- [x] Chặn mọi route khi `must_change_password` (trừ đổi mật khẩu và `GET /me`) → 403 `PASSWORD_CHANGE_REQUIRED`
+- [x] Tài khoản bị vô hiệu hóa không đăng nhập / refresh được
 
 ## 1.3. Quản trị (T3)
 
@@ -258,7 +258,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 ## 1.11. Backend testing
 
 - [x] `test_foundation.py` (migration, envelope lỗi, 404, 413, CORS, cấu hình): 8/8 xanh
-- [ ] `test_auth.py` (khóa tạm, token hết hạn, refresh bị thu hồi, đổi mật khẩu)
+- [x] `test_auth.py` (khóa tạm, token hết hạn, refresh bị thu hồi, đổi mật khẩu)
 - [ ] `test_admin.py`, `test_importer.py`
 - [ ] `test_me.py`
 - [ ] `test_crypto.py`
@@ -425,16 +425,16 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | DevOps (0.5) | 0% | |
 | Tài liệu (0.6) | 5/9 | Đặc tả, plan, hướng dẫn cài đặt xong; còn README, văn bản đồng ý |
 | Database (1.1) | 13/13 | Migration 0001 tạo đủ 10 bảng |
-| Backend API (1.2 – 1.9) | 0% | |
+| Backend API (1.2 – 1.9) | 8/83 | 1.2 Auth xong: login, refresh, đổi mật khẩu, khóa tạm, phân quyền; GET /me tối thiểu |
 | Quy tắc nghiệp vụ (1.10) | 0/20 | |
-| Backend testing (1.11) | 1/14 | `test_foundation.py` |
+| Backend testing (1.11) | 2/14 | `test_foundation.py`, `test_auth.py` (18 test) |
 | App Flutter (2.1 – 2.5) | 3/42 | Đăng nhập, đổi mật khẩu, đăng xuất |
 | Flutter testing (2.6) | 3/10 | api_client, auth_flow, build web |
 | Học máy & thí nghiệm (3) | 0% | |
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 54 mục `[x]` / 0 mục `[~]` / 3 mục `[!]` / 224 mục `[ ]` (281 items)
+**Tổng cộng**: 63 mục `[x]` / 0 mục `[~]` / 3 mục `[!]` / 215 mục `[ ]` (281 items)
 
 ### Bước tiếp theo khuyến nghị
 

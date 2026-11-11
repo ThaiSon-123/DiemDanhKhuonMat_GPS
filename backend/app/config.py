@@ -43,7 +43,15 @@ class RetentionCfg(BaseModel):
     evidence_days: int = 30
 
 
+class AuthCfg(BaseModel):
+    access_minutes: int = 15
+    refresh_days: int = 7
+    max_failures: int = 10
+    lock_minutes: int = 15
+
+
 class Settings(BaseModel):
+    auth: AuthCfg = AuthCfg()
     face: FaceCfg
     gps: GpsCfg
     session: SessionCfg
