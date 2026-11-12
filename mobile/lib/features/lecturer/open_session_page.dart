@@ -11,7 +11,7 @@ import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
 import '../student/permissions_page.dart';
 
-const _maxAcc = 20.0, _minGood = 5;
+const _maxAcc = devGps ? 50000.0 : 20.0, _minGood = 5;
 
 /// Artboard "GV · Mở phiên" (GV_MoPhien.dc.html). Tâm phiên = vị trí giảng viên (đặc tả 4.3, 6.1):
 /// gom mẫu 20 m / 5 mẫu / 3 s / 20 s; nút mở chỉ bật khi đủ mẫu. POST /sessions rồi sang "Phiên đang chạy".

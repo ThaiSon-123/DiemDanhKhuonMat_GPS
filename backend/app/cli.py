@@ -1,4 +1,7 @@
-"""Lệnh quản trị chạy từ terminal: python -m app.cli create-admin --username <tên đăng nhập>."""
+"""Lệnh quản trị chạy từ terminal:
+    python -m app.cli create-admin --username <tên đăng nhập>
+    python -m app.cli reset-password --username <tên đăng nhập>   (vd quản trị viên quên mật khẩu)
+"""
 import argparse
 import sys
 
@@ -27,6 +30,25 @@ def create_admin(username: str, full_name: str, email: str | None) -> int:
     return 0
 
 
+def reset_password(username: str) -> int:
+    from app.db import get_pool
+    from app.security import hash_password, normalize_username, temp_password
+
+    name = normalize_username(username) or username
+    temp = temp_password()
+    with get_pool().connection() as conn:
+        row = conn.execute("UPDATE users SET password_hash = %s, must_change_password = true, "
+                           "token_version = token_version + 1 WHERE username = %s RETURNING id",
+                           (hash_password(temp), name)).fetchone()
+        if not row:
+            print(f"Không có tài khoản: {name}", file=sys.stderr)
+            return 1
+        from app import audit
+        audit.log(conn, None, "user.reset_password.cli", f"users:{row['id']}")
+    print(f"Đã đặt lại mật khẩu cho {name}. Mật khẩu tạm (đổi ở lần đăng nhập đầu): {temp}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     load_dotenv(BASE_DIR / ".env")  # không ghi đè biến môi trường đã có
     p = argparse.ArgumentParser(prog="python -m app.cli")
@@ -35,7 +57,11 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--username", required=True)
     c.add_argument("--name", default="Quản trị viên")
     c.add_argument("--email")
+    r = sub.add_parser("reset-password", help="Cấp mật khẩu tạm mới cho một tài khoản")
+    r.add_argument("--username", required=True)
     args = p.parse_args(argv)
+    if args.cmd == "reset-password":
+        return reset_password(args.username)
     return create_admin(args.username, args.name, args.email)
 
 

@@ -115,7 +115,7 @@ class _ReportPageState extends State<ReportPage> {
       return ListView(padding: EdgeInsets.fromLTRB(pad, 20, pad, 40), children: [
         Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1180),
+            constraints: const BoxConstraints(maxWidth: webContentMaxWidth),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Wrap(spacing: 10, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 SizedBox(

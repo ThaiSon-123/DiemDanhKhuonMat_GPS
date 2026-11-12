@@ -55,9 +55,7 @@ class _MyFacePageState extends State<MyFacePage> {
             child: const Text('Hủy'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.absentText,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.absentText).merge(dialogButtonStyle),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Xóa dữ liệu'),
           ),

@@ -29,6 +29,14 @@ abstract final class AppColors {
   static const glowEmerald = Color(0x3310B981);
 }
 
+/// Bề rộng tối đa của nội dung trang web (không tính lề 32 hai bên). Canvas: 1180 ở màn 1280;
+/// nới lên để màn Full HD không trống hai bên quá nhiều.
+const webContentMaxWidth = 1376.0;
+
+/// Nút chính trong hộp thoại: gọn (nút mặc định của app cao 52 và kéo hết chiều ngang).
+final dialogButtonStyle = FilledButton.styleFrom(minimumSize: const Size(96, 44), elevation: 0,
+    padding: const EdgeInsets.symmetric(horizontal: 20));
+
 ThemeData appTheme() {
   OutlineInputBorder border(Color c, [double w = 1]) => OutlineInputBorder(
     borderRadius: BorderRadius.circular(16),
@@ -44,6 +52,23 @@ ThemeData appTheme() {
       error: AppColors.absent,
       surface: Colors.white,
       onSurface: AppColors.text,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      barrierColor: const Color(0x66090D16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      titleTextStyle: const TextStyle(fontFamily: 'Inter', fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.text),
+      contentTextStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, height: 20 / 14, color: AppColors.textSecondary),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+      constraints: const BoxConstraints(minWidth: 280, maxWidth: 520),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        minimumSize: const Size(64, 44),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600),
+      ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,

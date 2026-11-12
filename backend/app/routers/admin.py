@@ -163,6 +163,8 @@ def update_user(user_id: int, body: UserPatch, request: Request, admin=Admin, co
 
 @router.post("/users/{user_id}/reset-password")
 def reset_password(user_id: int, request: Request, admin=Admin, conn=Conn):
+    # Tự đặt lại thì mật khẩu cũ mất ngay và tự khóa mình ra ngoài; đổi mật khẩu của mình dùng /auth/change-password.
+    _not_self(admin, user_id, "đặt lại mật khẩu cho")
     get_user(conn, user_id)
     temp = security.temp_password()
     conn.execute("UPDATE users SET password_hash = %s, must_change_password = true, "

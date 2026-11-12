@@ -144,7 +144,7 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
         content: const Text('Sinh viên sẽ không điểm danh được nữa. Bạn vẫn sửa được kết quả sau khi đóng.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Hủy')),
-          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Đóng phiên')),
+          FilledButton(style: dialogButtonStyle, onPressed: () => Navigator.pop(c, true), child: const Text('Đóng phiên')),
         ],
       ),
     );

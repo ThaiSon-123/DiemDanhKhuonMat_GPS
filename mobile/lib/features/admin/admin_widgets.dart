@@ -111,7 +111,7 @@ Future<bool> adminConfirm(BuildContext context, String title, String body, Strin
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
           FilledButton(
-            style: danger ? FilledButton.styleFrom(backgroundColor: AppColors.absentText) : null,
+            style: danger ? FilledButton.styleFrom(backgroundColor: AppColors.absentText).merge(dialogButtonStyle) : dialogButtonStyle,
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(action),
           ),

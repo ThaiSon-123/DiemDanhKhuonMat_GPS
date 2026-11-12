@@ -206,7 +206,7 @@ class ClassesPageState extends State<ClassesPage> {
       padding: const EdgeInsets.fromLTRB(32, 28, 32, 40),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1116),
+          constraints: const BoxConstraints(maxWidth: webContentMaxWidth),
           child: LayoutBuilder(
             builder: (context, c) {
               final w = c.maxWidth;
@@ -784,7 +784,7 @@ class _ClassDialogState extends State<_ClassDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Hủy'),
         ),
-        FilledButton(onPressed: _busy ? null : _save, child: const Text('Lưu')),
+        FilledButton(style: dialogButtonStyle, onPressed: _busy ? null : _save, child: const Text('Lưu')),
       ],
     );
   }

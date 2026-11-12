@@ -1,0 +1,8 @@
+{
+  "type": "Feature",
+  "properties": { "name": "DEV: phủ cả Việt Nam, chỉ để thử trên máy dev" },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [[[102.0, 8.0], [110.0, 8.0], [110.0, 23.5], [102.0, 23.5], [102.0, 8.0]]]
+  }
+}

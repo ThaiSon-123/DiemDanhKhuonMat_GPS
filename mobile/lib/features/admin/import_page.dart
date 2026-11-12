@@ -95,7 +95,7 @@ class ImportPageState extends State<ImportPage> {
       padding: const EdgeInsets.fromLTRB(32, 28, 32, 40),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1116),
+          constraints: const BoxConstraints(maxWidth: webContentMaxWidth),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const AdminHeading('Nhập dữ liệu từ CSV',
                 subtitle: 'Hệ thống kiểm tra toàn bộ file trước. Có một dòng lỗi thì chưa nhập dòng nào.'),

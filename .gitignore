@@ -7,6 +7,7 @@ __pycache__/
 # Bí mật và dữ liệu
 .env
 backend/storage/
+backend/.pgdata/
 backend/models/*.onnx
 backend/tests/fixtures/faces/*.jpg
 experiments/data/

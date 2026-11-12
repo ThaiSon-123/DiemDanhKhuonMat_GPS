@@ -1,4 +1,5 @@
 """Cấu hình nghiệp vụ đọc từ config.yaml. Bí mật (DATABASE_URL, JWT_SECRET, DATA_KEY, ...) đọc thẳng từ biến môi trường ở nơi dùng."""
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -68,4 +69,6 @@ class Settings(BaseModel):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings(**yaml.safe_load((BASE_DIR / "config.yaml").read_text(encoding="utf-8")))
+    # CONFIG_FILE=config.dev.yaml để thử trên PC (GPS qua Wi-Fi kém, chưa có đa giác khuôn viên thật).
+    path = BASE_DIR / os.environ.get("CONFIG_FILE", "config.yaml")
+    return Settings(**yaml.safe_load(path.read_text(encoding="utf-8")))

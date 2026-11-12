@@ -236,12 +236,17 @@ class _TopBar extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           constraints: const BoxConstraints(minHeight: 64),
-          padding: EdgeInsets.fromLTRB(showMenu ? 8 : 32, 10, 32, 10),
           decoration: const BoxDecoration(
             color: Color(0xD9F6F8FC),
             border: Border(bottom: BorderSide(color: Color(0x99E2E8F0))),
           ),
-          child: Row(children: [
+          // Cùng cột với nội dung trang (tối đa webContentMaxWidth, lề 32) để đường dẫn thẳng hàng với tiêu đề.
+          alignment: Alignment.center,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: webContentMaxWidth + 64),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(showMenu ? 8 : 32, 10, 32, 10),
+              child: Row(children: [
             if (showMenu)
               IconButton(
                 tooltip: 'Mở menu',
@@ -258,7 +263,9 @@ class _TopBar extends StatelessWidget {
               )),
             ),
             ?action,
-          ]),
+              ]),
+            ),
+          ),
         ),
       ),
     );

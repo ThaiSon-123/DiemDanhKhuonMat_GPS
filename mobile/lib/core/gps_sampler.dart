@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:clock/clock.dart';
 import 'package:geolocator/geolocator.dart';
 
+/// `--dart-define=DEV_GPS=true`: nới ngưỡng độ chính xác để thử trên PC (định vị qua Wi-Fi sai hàng trăm mét).
+/// Đi cùng CONFIG_FILE=config.dev.yaml phía server. Không bật ở bản phát hành.
+const devGps = bool.fromEnvironment('DEV_GPS');
+
 class GpsSample {
   const GpsSample(this.lat, this.lng, this.acc, this.ts, {this.mock = false});
   final double lat;

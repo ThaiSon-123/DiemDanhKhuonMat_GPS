@@ -141,19 +141,25 @@ class UsersPageState extends State<UsersPage> {
             Text('Gửi cho người dùng $username. Mật khẩu chỉ hiện một lần; lần đăng nhập đầu sẽ phải đổi.'),
             const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(12),
+              padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
+              decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.inputBorder)),
-              child: SelectableText(temp, style: mono.copyWith(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: 2)),
+              child: Row(children: [
+                Expanded(child: SelectableText(temp,
+                    style: mono.copyWith(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: 2, color: AppColors.text))),
+                TextButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: temp));
+                    adminToast(ctx, 'Đã sao chép mật khẩu tạm');
+                  },
+                  icon: const Icon(Icons.copy, size: 18),
+                  label: const Text('Sao chép'),
+                ),
+              ]),
             ),
           ]),
           actions: [
-            TextButton.icon(
-              onPressed: () => Clipboard.setData(ClipboardData(text: temp)),
-              icon: const Icon(Icons.copy, size: 18),
-              label: const Text('Sao chép'),
-            ),
-            FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Xong')),
+            FilledButton(style: dialogButtonStyle, onPressed: () => Navigator.pop(ctx), child: const Text('Xong')),
           ],
         ),
       );
@@ -167,7 +173,7 @@ class UsersPageState extends State<UsersPage> {
       padding: const EdgeInsets.fromLTRB(32, 28, 32, 40),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1116),
+          constraints: const BoxConstraints(maxWidth: webContentMaxWidth),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const AdminHeading('Người dùng'),
             const SizedBox(height: 20),
@@ -322,6 +328,7 @@ class UsersPageState extends State<UsersPage> {
   Widget _userRow(Map<String, dynamic> u, int i) {
     final (bg, fg) = _avatars[i % _avatars.length];
     final active = u['is_active'] == true;
+    final self = u['username'] == widget.session.user?['username'];
     final student = u['role'] == 'student';
     final face = '${u['face_status']}';
     final (faceBg, faceFg) = switch (face) {
@@ -357,10 +364,14 @@ class UsersPageState extends State<UsersPage> {
       Text(active ? 'Hoạt động' : 'Vô hiệu hóa',
           style: TextStyle(fontWeight: FontWeight.w600, color: active ? const Color(0xFF059669) : const Color(0xFFE11D48))),
       Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-        OutlinedButton(
-          style: adminOutlinedStyle(),
-          onPressed: () => _resetPassword(u),
-          child: const Text('Đặt lại mật khẩu'),
+        Tooltip(
+          // Tự đặt lại thì mất ngay mật khẩu đang dùng (server cũng chặn).
+          message: self ? 'Không đặt lại mật khẩu cho chính bạn' : '',
+          child: OutlinedButton(
+            style: adminOutlinedStyle(),
+            onPressed: self ? null : () => _resetPassword(u),
+            child: const Text('Đặt lại mật khẩu'),
+          ),
         ),
         const SizedBox(width: 6),
         PopupMenuButton<String>(
@@ -480,7 +491,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
-        FilledButton(onPressed: _busy ? null : _submit, child: const Text('Tạo tài khoản')),
+        FilledButton(style: dialogButtonStyle, onPressed: _busy ? null : _submit, child: const Text('Tạo tài khoản')),
       ],
     );
   }

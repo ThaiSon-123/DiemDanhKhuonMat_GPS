@@ -145,7 +145,7 @@ class _AuditPageState extends State<AuditPage> {
       padding: const EdgeInsets.fromLTRB(32, 28, 32, 40),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1116),
+          constraints: const BoxConstraints(maxWidth: webContentMaxWidth),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const AdminHeading('Nhật ký thao tác',
                 subtitle: 'Xem ảnh, duyệt khuôn mặt, chỉnh kết quả, xuất báo cáo và xóa dữ liệu đều được ghi lại tại đây.'),

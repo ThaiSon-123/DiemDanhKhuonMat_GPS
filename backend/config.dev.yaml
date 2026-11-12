@@ -1,0 +1,39 @@
+# CHỈ DÙNG KHI THỬ TRÊN MÁY DEV (CONFIG_FILE=config.dev.yaml). Giống config.yaml, trừ phần GPS và khuôn viên:
+# PC định vị qua Wi-Fi sai hàng trăm mét, và chưa có đa giác khuôn viên thật. Không dùng trên server thật.
+auth:
+  access_minutes: 15
+  refresh_days: 7
+  max_failures: 10    # sai 10 lần / 15 phút cùng email thì khóa 15 phút
+  lock_minutes: 15
+consent:
+  current_version: v1   # đổi khi sửa văn bản đồng ý; sinh viên phải đồng ý lại
+face:
+  model_name: arcface_r50_onnx_v1
+  embed_file: w600k_r50.onnx   # file trong backend/models/ (xem models/README.md)
+  threads: 2
+  accept_threshold: 0.5    # tạm theo experiments/spike.md (cùng người 0,91–0,98; khác người 0,03); chốt ở Task 11
+  suspect_threshold: 0.4   # dưới mức này là không khớp; giữa 0,4 và 0,5 là sát ngưỡng
+  antispoof_threshold: 0.8   # tạm theo experiments/spike.md (thật ≥ 0,95; video ≤ 0,68); chốt ở Task 11
+  yaw_sign: 1            # chốt ở Task 0 trên ảnh điện thoại thật
+  yaw_threshold: 0.25
+  min_brightness: 60
+  min_sharpness: 50
+  min_face_px: 100
+  actions: [turn_left, turn_right]
+gps:
+  default_r0_m: 20
+  r0_range_m: [10, 50]
+  max_acc_lecturer_m: 50000
+  max_acc_student_m: 50000
+  min_samples_lecturer: 5
+  min_samples_student: 3
+  max_span_s: 20
+  max_speed_mps: 30
+session:
+  default_duration_min: 10
+  max_attempts: 5
+  challenge_ttl_s: 60
+  room_token_window_s: 30
+retention:
+  evidence_days: 30
+campus_polygon_file: campus.dev.geojson

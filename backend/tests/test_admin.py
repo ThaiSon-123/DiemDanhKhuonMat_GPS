@@ -94,6 +94,24 @@ def test_reset_password_sets_must_change(client, admin, make_user, conn):
     assert code(client.post("/auth/refresh", json={"refresh_token": old_refresh})) == "AUTH_TOKEN_REVOKED"
 
 
+
+def test_reset_password_self_blocked(client, admin, conn):
+    """Tự đặt lại thì mất ngay mật khẩu đang dùng và tự khóa mình ra ngoài."""
+    a, h = admin
+    assert client.post(f"/admin/users/{a['id']}/reset-password", headers=h).status_code == 422
+    assert conn.execute("SELECT must_change_password FROM users WHERE id = %s", (a["id"],)).fetchone()[
+        "must_change_password"] is False
+
+
+def test_cli_reset_password(client, make_user, capsys):
+    from app import cli
+    make_user("admin", username="boss")
+    assert cli.main(["reset-password", "--username", "boss"]) == 0
+    temp = capsys.readouterr().out.rsplit(": ", 1)[1].strip()
+    assert login(client, "boss", temp).json()["user"]["must_change_password"] is True
+    assert cli.main(["reset-password", "--username", "khong.co"]) == 1
+
+
 def test_deactivate_bumps_token_version_and_revokes_face(client, admin, make_user, conn):
     _, h = admin
     u = make_user("student", username="sva")

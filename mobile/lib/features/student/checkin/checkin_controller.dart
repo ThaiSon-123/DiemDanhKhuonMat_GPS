@@ -53,7 +53,7 @@ class CheckinController extends ChangeNotifier {
   DateTime? submittedAt;
   bool _autoRetried = false;
 
-  static const studentMaxAcc = 30.0, studentMinGood = 3;
+  static const studentMaxAcc = devGps ? 50000.0 : 30.0, studentMinGood = 3;
 
   void _set(VoidCallback f) {
     f();

@@ -113,7 +113,7 @@ class _FaceReviewPageState extends State<FaceReviewPage> {
         padding: EdgeInsets.fromLTRB(wide ? 32 : 16, wide ? 28 : 12, wide ? 32 : 16, wide ? 40 : 100),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1116),
+            constraints: const BoxConstraints(maxWidth: webContentMaxWidth),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               header,
               const SizedBox(height: 20),
