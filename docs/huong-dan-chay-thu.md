@@ -111,6 +111,16 @@ Cửa sổ ẩn danh:
 - **Quên mật khẩu quản trị**: `.\.venv\Scripts\python.exe -m app.cli reset-password --username admin` (in mật khẩu tạm mới).
 - **Dọn dữ liệu cũ**: `.\.venv\Scripts\python.exe -m app.jobs.cleanup` (trên VPS chạy bằng cron hằng ngày).
 
+## 8c. Đơn xin nghỉ, khiếu nại, cảnh báo, tổng quan
+
+1. Giảng viên mở rồi **đóng** một phiên mà `sv002` không điểm danh.
+2. `sv002` → tab **Lịch sử** → buổi đó → **Xin nghỉ / khiếu nại**: chọn loại, ghi lý do, đính kèm ảnh (tùy chọn) → **Gửi đơn**.
+3. Giảng viên → tab **Đơn** (điện thoại) hoặc mục **Đơn xin nghỉ, khiếu nại** (web) → **Duyệt** hoặc **Từ chối** (phải ghi lý do).
+   Duyệt đơn xin nghỉ → buổi đó thành "Vắng có phép"; duyệt khiếu nại → "Có mặt".
+4. Sinh viên vắng từ 3 buổi đã đóng: thẻ đỏ ở Lịch sử, thông báo trên chuông, nhãn "Vắng N buổi" ở danh sách của giảng viên.
+5. Quản trị đăng nhập vào thẳng trang **Tổng quan** (tỉ lệ có mặt theo lớp, cờ đáng ngờ, lý do không đạt).
+6. Đăng ký khuôn mặt: bật **Tự chụp** (mặc định), nhìn thẳng → quay trái → quay phải theo gợi ý, máy tự giữ ảnh.
+
 ## 9. Lỗi thường gặp
 
 | Hiện tượng | Cách xử lý |

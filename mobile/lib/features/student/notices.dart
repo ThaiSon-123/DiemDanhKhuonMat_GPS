@@ -22,7 +22,7 @@ class Notice {
 const _recent = Duration(days: 7);
 
 List<Notice> buildNotices(Map<String, dynamic> me, List<Map<String, dynamic>> classes, List<Map<String, dynamic>> attendance,
-    {DateTime? now}) {
+    {List<Map<String, dynamic>> requests = const [], DateTime? now}) {
   final t = now ?? DateTime.now();
   final out = <Notice>[];
   for (final c in classes.where((c) => c['open_session'] != null)) {
@@ -34,6 +34,20 @@ List<Notice> buildNotices(Map<String, dynamic> me, List<Map<String, dynamic>> cl
           '${c['name']} · đóng lúc ${_hhmm(s['expires_at'])}. Bấm để điểm danh ngay.',
           route: route.toString(), urgent: true));
     }
+  }
+  for (final c in classes.where((c) => c['warn'] == true)) {
+    out.add(Notice(Icons.warning_amber_rounded, AppColors.absentText, AppColors.absentSoft, 'Cảnh báo chuyên cần ${c['code']}',
+        'Bạn đã vắng ${c['absences']} buổi môn ${c['name']} (ngưỡng ${c['warn_absent']}). Buổi nghỉ có lý do thì gửi đơn.',
+        route: '/student/history', urgent: true));
+  }
+  for (final r in requests.where((r) => r['decided_at'] != null)) {
+    if (t.difference(DateTime.parse('${r['decided_at']}').toLocal()) > _recent) continue;
+    final kind = r['kind'] == 'leave' ? 'Đơn xin nghỉ' : 'Khiếu nại';
+    final ok = r['status'] == 'approved';
+    out.add(Notice(ok ? Icons.check_circle : Icons.cancel, ok ? AppColors.presentText : AppColors.absentText,
+        ok ? AppColors.presentSoft : AppColors.absentSoft, '$kind ${r['class_code']} ${ok ? 'được duyệt' : 'bị từ chối'}',
+        ok ? (r['kind'] == 'leave' ? 'Buổi đó được ghi vắng có phép.' : 'Buổi đó được ghi có mặt.')
+            : 'Lý do: ${r['decision_note'] ?? 'không ghi'}', route: '/student/history'));
   }
   final face = me['face'] as Map?;
   switch (face?['status']) {

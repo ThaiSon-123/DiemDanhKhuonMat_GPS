@@ -20,6 +20,7 @@ class LecturerHomePage extends StatefulWidget {
 class _LecturerHomePageState extends State<LecturerHomePage> {
   List<Map<String, dynamic>>? _classes;
   int? _pending;
+  int? _requests;
   String? _error;
 
   @override
@@ -35,6 +36,8 @@ class _LecturerHomePageState extends State<LecturerHomePage> {
       if (mounted) setState(() => _classes = [for (final c in r as List) Map<String, dynamic>.from(c as Map)]);
       final pending = await widget.session.api.get('/faces/pending') as List; // số trên tab "Duyệt mặt"
       if (mounted) setState(() => _pending = pending.length);
+      final requests = await widget.session.api.get('/requests') as List; // đơn đang chờ: số trên tab "Đơn"
+      if (mounted) setState(() => _requests = requests.length);
     } on ApiError catch (e) {
       if (mounted) setState(() => _error = e.message);
     }
@@ -47,7 +50,7 @@ class _LecturerHomePageState extends State<LecturerHomePage> {
       header: NeoHeader(label: 'Giảng viên', title: 'Lớp của tôi', trailing: [
         InitialsAvatar(name, bg: const Color(0xFFFFFBEB), fg: const Color(0xFFB45309)),
       ]),
-      dock: lecturerDock(context, widget.session, 0, pending: _pending),
+      dock: lecturerDock(context, widget.session, 0, pending: _pending, requests: _requests),
       body: _classes == null
           ? LoadingOrError(error: _error, onRetry: _load)
           : RefreshIndicator(onRefresh: _load, child: _content(name, _classes!)),

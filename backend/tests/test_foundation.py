@@ -22,11 +22,11 @@ def _body(body: _Body):
     return {"ok": True}
 
 
-def test_migration_creates_10_tables(conn):
+def test_migration_creates_all_tables(conn):
     names = {r["table_name"] for r in conn.execute(
         "SELECT table_name FROM information_schema.tables "
         "WHERE table_schema = 'public' AND table_name <> 'alembic_version'")}
-    assert names == TEN_TABLES
+    assert names == TEN_TABLES | {"requests"}  # 0003: đơn xin nghỉ / khiếu nại
 
 
 def test_fixtures_insert_rows(make_user, make_class, enroll, conn):

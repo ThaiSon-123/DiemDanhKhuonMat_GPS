@@ -46,6 +46,12 @@ class RetentionCfg(BaseModel):
     evidence_days: int = 30
 
 
+class AttendanceCfg(BaseModel):
+    warn_absent: int = 3        # vắng (kể cả bị từ chối) từ ngần này buổi trở lên thì cảnh báo
+    request_days: int = 14      # gửi đơn xin nghỉ / khiếu nại trong vòng ngần này ngày sau buổi học
+    attachment_max_mb: float = 5
+
+
 class AuthCfg(BaseModel):
     access_minutes: int = 15
     refresh_days: int = 7
@@ -60,6 +66,7 @@ class ConsentCfg(BaseModel):
 class Settings(BaseModel):
     auth: AuthCfg = AuthCfg()
     consent: ConsentCfg = ConsentCfg()
+    attendance: AttendanceCfg = AttendanceCfg()
     face: FaceCfg
     gps: GpsCfg
     session: SessionCfg

@@ -164,7 +164,7 @@ class _ReportPageState extends State<ReportPage> {
     int n(Map m, String k) => (m[k] as num).toInt();
     final rates = [for (final s in sessions) if (n(s, 'total') > 0) n(s, 'present') / n(s, 'total')];
     final avg = rates.isEmpty ? null : (100 * rates.reduce((a, b) => a + b) / rates.length).round();
-    final many = rows.where((x) => n(x, 'vang') >= 3).length;
+    final many = rows.where((x) => x['warn'] == true).length;
     final pending = rows.fold<int>(0, (s, x) => s + n(x, 'chua_duyet'));
     final at = _loadedAt!;
     String two(int v) => v.toString().padLeft(2, '0');
@@ -184,7 +184,7 @@ class _ReportPageState extends State<ReportPage> {
           final w = (c.maxWidth - 12 * (cols - 1)) / cols;
           final kpis = [
             (Icons.check, 'Tỉ lệ có mặt trung bình', avg == null ? '–' : '$avg%', const Color(0x2610B981), const Color(0xFF34D399)),
-            (Icons.error_outline, 'Vắng từ 3 buổi trở lên', '$many SV', const Color(0x26F43F5E), const Color(0xFFFB7185)),
+            (Icons.error_outline, 'Vắng từ ${r['warn_absent'] ?? 3} buổi trở lên', '$many SV', const Color(0x26F43F5E), const Color(0xFFFB7185)),
             (Icons.schedule, 'Lượt chờ duyệt', '$pending', const Color(0x26F59E0B), const Color(0xFFFCD34D)),
             (Icons.bolt, 'Thành công ngay lần đầu', r['first_try_pct'] == null ? '–' : '${r['first_try_pct']}%',
                 const Color(0x336366F1), const Color(0xFFA5B4FC)),
@@ -286,7 +286,7 @@ class _ReportPageState extends State<ReportPage> {
     final total = (x['so_buoi'] as num).toInt();
     final present = (x['co_mat'] as num).toInt();
     final pct = total == 0 ? 0 : (100 * present / total).round();
-    final bad = (x['vang'] as num) >= 3;
+    final bad = x['warn'] == true;
     final (bg, fg) = avatarColors[i % avatarColors.length];
     return _tableRow([
       Row(children: [

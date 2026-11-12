@@ -9,9 +9,11 @@ import '../lecturer/report_page.dart';
 import 'audit_page.dart';
 import 'classes_page.dart';
 import 'import_page.dart';
+import 'overview_page.dart';
 import 'users_page.dart';
 
 const _nav = <WebNavItem>[
+  WebNavItem('Bảng điều khiển', Icons.space_dashboard_outlined, 'Tổng quan'),
   WebNavItem('Quản lý', Icons.group_outlined, 'Người dùng'),
   WebNavItem('Quản lý', Icons.view_agenda_outlined, 'Lớp'),
   WebNavItem('Quản lý', Icons.upload_outlined, 'Nhập CSV'),
@@ -37,9 +39,9 @@ class _AdminShellState extends State<AdminShell> {
   final _importKey = GlobalKey<ImportPageState>();
 
   Widget? get _action => switch (_current) {
-        0 => adminPrimaryButton('Thêm người dùng', Icons.add, () => _usersKey.currentState?.addUser()),
-        1 => adminPrimaryButton('Thêm lớp', Icons.add, () => _classesKey.currentState?.addClass()),
-        2 => TextButton.icon(
+        1 => adminPrimaryButton('Thêm người dùng', Icons.add, () => _usersKey.currentState?.addUser()),
+        2 => adminPrimaryButton('Thêm lớp', Icons.add, () => _classesKey.currentState?.addClass()),
+        3 => TextButton.icon(
             onPressed: () => _importKey.currentState?.downloadTemplate(),
             icon: const Icon(Icons.download, size: 18),
             label: const Text('Tải file mẫu', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -48,12 +50,13 @@ class _AdminShellState extends State<AdminShell> {
       };
 
   Widget _page(String label) => switch (_current) {
-        0 => UsersPage(key: _usersKey, session: widget.session),
-        1 => ClassesPage(key: _classesKey, session: widget.session),
-        2 => ImportPage(key: _importKey, session: widget.session),
-        3 => FaceReviewPage(session: widget.session),
-        4 => ReportPage(session: widget.session),
-        5 => AuditPage(session: widget.session),
+        0 => OverviewPage(session: widget.session),
+        1 => UsersPage(key: _usersKey, session: widget.session),
+        2 => ClassesPage(key: _classesKey, session: widget.session),
+        3 => ImportPage(key: _importKey, session: widget.session),
+        4 => FaceReviewPage(session: widget.session),
+        5 => ReportPage(session: widget.session),
+        6 => AuditPage(session: widget.session),
         _ => Center(child: Text('Màn "$label" đang được xây dựng.', style: const TextStyle(color: AppColors.textMuted))),
       };
 

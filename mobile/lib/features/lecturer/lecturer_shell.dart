@@ -12,6 +12,7 @@ const _nav = [
   (WebNavItem('Giảng dạy', Icons.schedule, 'Phiên điểm danh'), '/lecturer'),
   (WebNavItem('Giảng dạy', Icons.qr_code_2, 'Chiếu mã phòng'), '/lecturer/project'),
   (WebNavItem('Giảng dạy', Icons.how_to_reg_outlined, 'Duyệt khuôn mặt'), '/lecturer/faces'),
+  (WebNavItem('Giảng dạy', Icons.inbox_outlined, 'Đơn xin nghỉ, khiếu nại'), '/lecturer/requests'),
   (WebNavItem('Giảng dạy', Icons.bar_chart, 'Báo cáo'), '/lecturer/report'),
 ];
 

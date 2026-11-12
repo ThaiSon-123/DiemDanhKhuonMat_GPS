@@ -12,6 +12,7 @@ from app.db import get_conn
 from app.errors import ApiError
 from app.routers.me import consent_state
 from app.security import require_role
+from app.services.face.checks import quality_reason
 from app.services.face.runtime import get_engine, infer
 from app.services.face.types import FaceEngine
 from app.services.face.verify import build_template
@@ -65,6 +66,22 @@ def enroll(request: Request, photos: list[UploadFile] = File(...), user=Depends(
     conn.execute("UPDATE face_templates SET photos_path = %s WHERE id = %s", (rel, tid))
     audit.log(conn, user["id"], "face.enroll", f"face_templates:{tid}", after={"photos": len(data)}, ip=_ip(request))
     return {"template_id": tid, "status": "pending"}
+
+
+@router.post("/faces/precheck")
+def precheck(photo: UploadFile = File(...), user=Depends(require_role("student")),
+             engine: FaceEngine = Depends(get_engine)):
+    """Kiểm tra nhanh một khung (không lưu, không trích đặc trưng) để app tự chụp khi đăng ký:
+    trả lý do chất lượng nếu chưa đạt và hướng mặt (front / left / right / turning)."""
+    cfg = get_settings().face
+    a = infer(engine.analyze, photo.file.read(), embed=False, spoof=False)
+    reason = quality_reason(a, cfg)
+    pose = None
+    if reason is None and a.yaw_proxy is not None:
+        y = a.yaw_proxy * cfg.yaw_sign  # < 0: sinh viên quay sang trái (quy ước như checks.action_done)
+        t = cfg.yaw_threshold
+        pose = "front" if abs(y) <= t / 2 else "left" if y <= -t else "right" if y >= t else "turning"
+    return {"ok": reason is None, "reason": reason, "pose": pose}
 
 
 # ---- Duyệt (quản trị viên: mọi sinh viên; giảng viên: sinh viên các lớp mình dạy) ----

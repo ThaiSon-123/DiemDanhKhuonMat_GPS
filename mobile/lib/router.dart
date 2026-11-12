@@ -11,6 +11,7 @@ import 'features/lecturer/lecturer_shell.dart';
 import 'features/lecturer/live_session_page.dart';
 import 'features/lecturer/open_session_page.dart';
 import 'features/lecturer/report_page.dart';
+import 'features/lecturer/requests_page.dart';
 import 'features/lecturer/room_code_page.dart';
 import 'features/lecturer/session_history_page.dart';
 import 'features/lecturer/student_detail_page.dart';
@@ -61,6 +62,7 @@ GoRouter buildRouter(Session session) => GoRouter(
         GoRoute(path: '/lecturer', builder: (_, _) => LecturerHomePage(session: session), routes: [
           GoRoute(path: 'faces', builder: (_, _) => LecturerFacesPage(session: session)),
           GoRoute(path: 'project', builder: (_, _) => ProjectPickerPage(session: session)),
+          GoRoute(path: 'requests', builder: (_, _) => LecturerRequestsPage(session: session)),
           GoRoute(path: 'report', builder: (_, _) => ReportPage(session: session, standalone: true)),
           GoRoute(
               path: 'open/:cid',

@@ -7,6 +7,7 @@ import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
 import '../lecturer/live_session_page.dart' show hhmm;
 import '../lecturer/session_history_page.dart' show DateTile;
+import 'request_sheet.dart';
 import 'student_nav.dart';
 
 /// Trạng thái hiển thị cho sinh viên (không bao giờ thấy điểm số): nhãn, biểu tượng, nền, chữ, viền.
@@ -35,6 +36,8 @@ class StudentHistoryPage extends StatefulWidget {
 
 class _StudentHistoryPageState extends State<StudentHistoryPage> {
   List<Map<String, dynamic>>? _rows;
+  Map<int, Map<String, dynamic>> _requests = {}; // đơn mới nhất của mỗi buổi
+  Map<String, Map<String, dynamic>> _classes = {}; // theo mã lớp: số buổi vắng, cảnh báo
   String? _error;
   String? _code;
 
@@ -47,10 +50,16 @@ class _StudentHistoryPageState extends State<StudentHistoryPage> {
   Future<void> _load() async {
     setState(() => _error = null);
     try {
-      final r = await widget.session.api.get('/me/attendance') as List;
+      final api = widget.session.api;
+      final res = await Future.wait([api.get('/me/attendance'), api.get('/me/requests'), api.get('/me/classes')]);
       if (!mounted) return;
       setState(() {
-        _rows = [for (final x in r) Map<String, dynamic>.from(x as Map)];
+        _rows = [for (final x in res[0] as List) Map<String, dynamic>.from(x as Map)];
+        _requests = {};
+        for (final x in res[1] as List) {
+          _requests.putIfAbsent((x as Map)['session_id'] as int, () => Map<String, dynamic>.from(x)); // id giảm dần
+        }
+        _classes = {for (final c in res[2] as List) '${(c as Map)['code']}': Map<String, dynamic>.from(c)};
         _code ??= _rows!.firstOrNull?['class_code'] as String?;
       });
     } on ApiError catch (e) {
@@ -140,6 +149,10 @@ class _StudentHistoryPageState extends State<StudentHistoryPage> {
               ]),
             ]),
           ),
+          if (_classes[_code]?['warn'] == true) ...[
+            const SizedBox(height: 12),
+            absenceWarning(_classes[_code]!['absences'] as int, _classes[_code]!['warn_absent'] as int),
+          ],
           const SizedBox(height: 12),
           for (final (i, r) in rows.indexed) ...[_row(total - i, r), const SizedBox(height: 10)],
         ],
@@ -163,20 +176,44 @@ class _StudentHistoryPageState extends State<StudentHistoryPage> {
             : r['status'] == 'manual_present'
                 ? 'Giảng viên điểm danh tay'
                 : 'Không điểm danh';
+    final req = _requests[r['session_id']];
+    final can = canRequest(r, req);
     return NeoCard(
       radius: 20,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(children: [
-        DateTile(DateTime.parse('${r['opened_at']}').toLocal()),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Buổi $n', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.text)),
-            const SizedBox(height: 2),
-            Text(sub, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-          ]),
-        ),
-        Pill(label, icon: icon, bg: bg, fg: fg, border: border, padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          DateTile(DateTime.parse('${r['opened_at']}').toLocal()),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Buổi $n', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.text)),
+              const SizedBox(height: 2),
+              Text(sub, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            ]),
+          ),
+          Pill(label, icon: icon, bg: bg, fg: fg, border: border, padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3)),
+        ]),
+        if (req != null) ...[const SizedBox(height: 10), requestLine(req)],
+        if (can) ...[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () async {
+                if (await showRequestSheet(context, widget.session, r) == true) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Đã gửi đơn. Giảng viên sẽ xem và trả lời.'), behavior: SnackBarBehavior.floating));
+                  }
+                  _load();
+                }
+              },
+              icon: const Icon(Icons.edit_note, size: 18),
+              label: Text(req == null ? 'Xin nghỉ / khiếu nại' : 'Gửi đơn khác'),
+            ),
+          ),
+        ],
       ]),
     );
   }

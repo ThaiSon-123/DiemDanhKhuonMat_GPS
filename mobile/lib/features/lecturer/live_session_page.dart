@@ -9,6 +9,7 @@ import '../../core/session.dart';
 import '../../ui/neo.dart';
 import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
+import '../student/request_sheet.dart' show absencePill;
 import 'open_session_page.dart' show Segmented;
 
 const pollEvery = Duration(seconds: 4); // đặc tả 4.5: 3–5 giây
@@ -370,7 +371,10 @@ class _Row extends StatelessWidget {
                       monospace: true, fontSize: 10, padding: const EdgeInsets.symmetric(horizontal: 5)),
                 ]),
                 const SizedBox(height: 4),
-                Pill(text, icon: icon, bg: bg, fg: fg, border: border, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2)),
+                Wrap(spacing: 6, runSpacing: 4, children: [
+                  Pill(text, icon: icon, bg: bg, fg: fg, border: border, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2)),
+                  if (r['warn'] == true) absencePill(r['absences'] as int), // vắng nhiều ở lớp này (buổi đã đóng)
+                ]),
               ]),
             ),
             const Icon(Icons.chevron_right, size: 20, color: Color(0xFF94A3B8)),

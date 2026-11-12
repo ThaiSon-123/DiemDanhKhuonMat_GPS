@@ -171,11 +171,11 @@ void main() {
           '/me/classes' => (200, [{'id': 3, 'code': 'IT4060', 'name': 'Học máy', 'semester': '2026-1'}]),
           _ => (200, {
               'class': {'id': 3, 'code': 'IT4060', 'name': 'Học máy', 'semester': '2026-1'}, 'session_count': 4,
-              'first_try_pct': 84,
+              'first_try_pct': 84, 'warn_absent': 3,
               'sessions': [for (var i = 0; i < 4; i++) {'id': i, 'opened_at': iso(Duration(days: -i)), 'present': 2, 'suspicious': 0, 'total': 2}],
               'rows': [
                 {'student_id': 1, 'student_code': 'SV001', 'full_name': 'Nguyễn Văn An', 'co_mat': 4, 'vang_co_phep': 0, 'vang': 0, 'chua_duyet': 0, 'so_buoi': 4},
-                {'student_id': 2, 'student_code': 'SV022', 'full_name': 'Hoàng Đức Minh', 'co_mat': 1, 'vang_co_phep': 0, 'vang': 3, 'chua_duyet': 0, 'so_buoi': 4},
+                {'student_id': 2, 'student_code': 'SV022', 'full_name': 'Hoàng Đức Minh', 'co_mat': 1, 'vang_co_phep': 0, 'vang': 3, 'chua_duyet': 0, 'so_buoi': 4, 'warn': true},
               ],
             }),
         }, size: const Size(1280, 980));

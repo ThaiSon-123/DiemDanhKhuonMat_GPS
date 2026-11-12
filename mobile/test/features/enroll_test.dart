@@ -72,6 +72,7 @@ void main() {
           '/me' => (200, me(consent: false)),
           '/me/classes' => (200, []),
           '/me/attendance' => (200, []),
+          '/me/requests' => (200, []),
           _ => (404, apiErr('NOT_FOUND', 'x')),
         });
     expect(find.text('Đăng ký khuôn mặt'), findsOneWidget);
@@ -98,7 +99,7 @@ void main() {
 
   testWidgets('đăng ký: hiện lý do từng ảnh từ ENROLL_REJECTED và chỉ chụp lại ảnh hỏng', (t) async {
     final cam = FakeCamera();
-    final (http, _) = await pump(t, (s) => EnrollPage(session: s, camera: cam), (o) => switch (o.path) {
+    final (http, _) = await pump(t, (s) => EnrollPage(session: s, camera: cam, autoCapture: false), (o) => switch (o.path) {
           '/me' => (200, me()),
           '/faces/enroll' => (422, {
               'error': {'code': 'ENROLL_REJECTED', 'message': 'Một số ảnh chưa đạt',
@@ -119,6 +120,33 @@ void main() {
     expect(cam.shots, 4);
     expect(find.text('Gửi ảnh để duyệt'), findsOneWidget);
     expect(http.calls.where((c) => c.startsWith('POST /faces/enroll')).length, 1);
+  });
+
+  testWidgets('tự chụp: giữ ảnh khi 2 khung liên tiếp đúng hướng, gợi ý khi quay sai hướng', (t) async {
+    final cam = FakeCamera();
+    // Kết quả kiểm tra nhanh lần lượt: thẳng ×2 → ảnh 1; quay phải (sai) rồi trái ×2 → ảnh 2; phải ×2 → ảnh 3.
+    final poses = ['front', 'front', 'right', 'left', 'left', 'right', 'right'];
+    var n = 0;
+    final (http, _) = await pump(t, (s) => EnrollPage(session: s, camera: cam), (o) => switch (o.path) {
+          '/faces/precheck' => (200, {'ok': true, 'reason': null, 'pose': poses[(n++).clamp(0, poses.length - 1)]}),
+          _ => (200, me()),
+        }, settle: false);
+    Future<void> tick() async {
+      await t.pump(const Duration(milliseconds: 700));
+      await t.pump(const Duration(milliseconds: 20));
+    }
+
+    for (var i = 0; i < 3; i++) {
+      await tick();
+    }
+    expect(find.text('Quay sang trái của bạn (đang quay phải)'), findsOneWidget);
+    for (var i = 0; i < 4; i++) {
+      await tick();
+    }
+    expect(find.text('Gửi ảnh để duyệt'), findsOneWidget);
+    expect(http.calls.where((c) => c.startsWith('POST /faces/precheck')).length, 7);
+    await tick(); // đủ ảnh thì dừng tự chụp
+    expect(http.calls.where((c) => c.startsWith('POST /faces/precheck')).length, 7);
   });
 
   testWidgets('từ chối quyền camera thì hiện màn hướng dẫn cấp quyền', (t) async {

@@ -47,6 +47,11 @@ def accept_consent(body: ConsentIn, user: dict = Depends(require_role("student")
     return consent_state(conn, user["id"])
 
 
+# Số buổi vắng (kể cả bị từ chối) của một sinh viên trong lớp c, chỉ tính buổi đã đóng.
+ABSENCES_SQL = """(SELECT count(*) FROM attendance_records ar JOIN attendance_sessions x ON x.id = ar.session_id
+  WHERE x.class_id = c.id AND ar.student_id = {student} AND ar.status IN ('absent', 'rejected')
+  AND (x.closed_at IS NOT NULL OR x.expires_at <= now()))"""
+
 _OPEN_SESSION = """(SELECT json_build_object('id', s.id, 'expires_at', s.expires_at, 'room_check', s.room_check)
   FROM attendance_sessions s
   WHERE s.class_id = c.id AND s.closed_at IS NULL AND s.expires_at > now()) AS open_session"""
@@ -56,13 +61,16 @@ _OPEN_SESSION = """(SELECT json_build_object('id', s.id, 'expires_at', s.expires
 def my_classes(user: dict = Depends(require_role("student", "lecturer")),
                conn: psycopg.Connection = Depends(get_conn)):
     if user["role"] == "student":
-        sql = (f"SELECT c.id, c.code, c.name, c.semester, l.full_name AS lecturer_name, {_OPEN_SESSION} "
+        sql = (f"SELECT c.id, c.code, c.name, c.semester, l.full_name AS lecturer_name, {_OPEN_SESSION}, "
+               f"{ABSENCES_SQL.format(student='e.student_id')} AS absences "
                "FROM enrollments e JOIN classes c ON c.id = e.class_id JOIN users l ON l.id = c.lecturer_id "
                "WHERE e.student_id = %s")
-    else:
-        sql = (f"SELECT c.id, c.code, c.name, c.semester, "
-               f"(SELECT count(*) FROM enrollments e WHERE e.class_id = c.id) AS student_count, {_OPEN_SESSION} "
-               "FROM classes c WHERE c.lecturer_id = %s")
+        rows = conn.execute(sql + " ORDER BY c.semester DESC, c.code", (user["id"],)).fetchall()
+        limit = get_settings().attendance.warn_absent
+        return [{**r, "warn": r["absences"] >= limit, "warn_absent": limit} for r in rows]
+    sql = (f"SELECT c.id, c.code, c.name, c.semester, "
+           f"(SELECT count(*) FROM enrollments e WHERE e.class_id = c.id) AS student_count, {_OPEN_SESSION} "
+           "FROM classes c WHERE c.lecturer_id = %s")
     return conn.execute(sql + " ORDER BY c.semester DESC, c.code", (user["id"],)).fetchall()
 
 
@@ -71,7 +79,8 @@ def my_attendance(user: dict = Depends(require_role("student")), conn: psycopg.C
     """Mọi buổi của mọi lớp mình học, mới nhất trước. Không trả điểm số (sinh viên không bao giờ thấy)."""
     return conn.execute(
         "SELECT r.session_id, c.id AS class_id, c.code AS class_code, c.name AS class_name, s.opened_at, r.status, "
-        "a.received_at AS checked_at FROM attendance_records r JOIN attendance_sessions s ON s.id = r.session_id "
+        "a.received_at AS checked_at, (s.closed_at IS NULL AND now() < s.expires_at) AS is_open "
+        "FROM attendance_records r JOIN attendance_sessions s ON s.id = r.session_id "
         "JOIN classes c ON c.id = s.class_id LEFT JOIN checkin_attempts a ON a.id = r.best_attempt_id "
         "WHERE r.student_id = %s ORDER BY s.opened_at DESC",
         (user["id"],)).fetchall()

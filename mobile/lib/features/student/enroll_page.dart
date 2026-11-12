@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' show ImageFilter;
 
@@ -20,13 +21,20 @@ const _steps = [
   ('Quay phải', 'Hơi quay mặt sang phải'),
 ];
 
+/// Hướng mặt cần cho từng bước (khớp `pose` của POST /faces/precheck).
+const _poses = ['front', 'left', 'right'];
+const _autoEvery = Duration(milliseconds: 700);
+const _autoNeed = 2; // số khung đạt liên tiếp trước khi giữ ảnh
+
 /// Artboard "SV · Đăng ký khuôn mặt" (SV_DangKyKhuonMat.dc.html). Chụp 3 ảnh rồi POST /faces/enroll.
-/// Khác canvas: chụp bằng nút (chưa có phát hiện mặt trên máy để tự chụp, ML Kit không chạy trên web);
-/// server kiểm tra từng ảnh và trả lý do để chụp lại đúng ảnh hỏng.
+/// Tự chụp: mỗi ~0,7 s gửi một khung lên POST /faces/precheck (server phát hiện mặt, đo sáng, nét, hướng mặt;
+/// không lưu ảnh); đủ 2 khung đạt liên tiếp đúng hướng thì giữ ảnh và sang bước sau. Vẫn có nút chụp tay.
+/// Server kiểm tra lại cả 3 ảnh khi gửi và trả lý do để chụp lại đúng ảnh hỏng.
 class EnrollPage extends StatefulWidget {
-  const EnrollPage({super.key, required this.session, this.camera});
+  const EnrollPage({super.key, required this.session, this.camera, this.autoCapture = true});
   final Session session;
   final FaceCamera? camera;
+  final bool autoCapture;
 
   @override
   State<EnrollPage> createState() => _EnrollPageState();
@@ -41,18 +49,74 @@ class _EnrollPageState extends State<EnrollPage> {
   bool _denied = false;
   bool _busy = false;
   String? _error;
+  late bool _auto = widget.autoCapture;
+  Timer? _autoTimer;
+  bool _checking = false;
+  int _streak = 0;
+  String? _hint; // gợi ý tự chụp: "Quay thêm sang trái", lý do chưa đạt…
 
   @override
   void initState() {
     super.initState();
     _open();
+    _autoTimer = Timer.periodic(_autoEvery, (_) => _autoTick());
   }
 
   @override
   void dispose() {
+    _autoTimer?.cancel();
     _cam.dispose();
     super.dispose();
   }
+
+  bool get _needShot => _shots[_step] == null || _issues.containsKey(_step);
+
+  Future<void> _autoTick() async {
+    if (!_auto || !_ready || _busy || _checking || !_needShot || !mounted) return;
+    _checking = true;
+    final step = _step;
+    try {
+      final img = await _cam.capture();
+      final r = await widget.session.api.post('/faces/precheck', data: FormData.fromMap({
+        'photo': MultipartFile.fromBytes(img, filename: 'f.jpg', contentType: DioMediaType('image', 'jpeg')),
+      }));
+      if (!mounted || step != _step || !_auto) return;
+      final ok = r is Map && r['ok'] == true;
+      final pose = r is Map ? r['pose'] as String? : null;
+      if (ok && pose == _poses[step]) {
+        _streak++;
+        if (_streak >= _autoNeed) {
+          _streak = 0;
+          _keep(img);
+          setState(() => _hint = null);
+          return;
+        }
+        setState(() => _hint = 'Giữ yên…');
+      } else {
+        _streak = 0;
+        setState(() => _hint = !ok
+            ? (r is Map && r['reason'] != null ? faceReason('${r['reason']}') : null)
+            : switch ((_poses[step], pose)) {
+                ('front', _) => 'Nhìn thẳng vào camera',
+                ('left', 'right') => 'Quay sang trái của bạn (đang quay phải)',
+                ('right', 'left') => 'Quay sang phải của bạn (đang quay trái)',
+                ('left', _) => 'Quay thêm sang trái',
+                _ => 'Quay thêm sang phải',
+              });
+      }
+    } catch (_) {
+      // Mạng chập chờn hoặc server chưa có /faces/precheck: bỏ qua lượt này, vẫn chụp tay được.
+    } finally {
+      _checking = false;
+    }
+  }
+
+  void _keep(Uint8List img) => setState(() {
+        _shots[_step] = img;
+        _issues.remove(_step);
+        final next = List.generate(_steps.length, (i) => i).where((i) => _shots[i] == null || _issues.containsKey(i));
+        if (next.isNotEmpty) _step = next.first;
+      });
 
   Future<void> _open() async {
     setState(() {
@@ -74,13 +138,7 @@ class _EnrollPageState extends State<EnrollPage> {
   Future<void> _take() async {
     setState(() => _busy = true);
     try {
-      final img = await _cam.capture();
-      setState(() {
-        _shots[_step] = img;
-        _issues.remove(_step);
-        final next = List.generate(_steps.length, (i) => i).where((i) => _shots[i] == null || _issues.containsKey(i));
-        if (next.isNotEmpty) _step = next.first;
-      });
+      _keep(await _cam.capture());
     } catch (e) {
       setState(() => _error = 'Chụp không được: $e');
     } finally {
@@ -196,7 +254,13 @@ class _EnrollPageState extends State<EnrollPage> {
     final border = retake ? AppColors.absent : const Color(0xFF34D399);
     return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       Pill(
-        retake ? 'Ảnh ${_step + 1}: ${faceReason(_issues[_step]!)}' : (_ready ? 'Đưa mặt vào khung rồi bấm chụp' : 'Đang mở camera…'),
+        retake
+            ? 'Ảnh ${_step + 1}: ${faceReason(_issues[_step]!)}'
+            : !_ready
+                ? 'Đang mở camera…'
+                : _auto && _needShot
+                    ? (_hint ?? 'Đưa mặt vào khung, máy sẽ tự chụp')
+                    : 'Đưa mặt vào khung rồi bấm chụp',
         bg: retake ? const Color(0x26F43F5E) : const Color(0x2610B981),
         fg: retake ? const Color(0xFFFDA4AF) : const Color(0xFF6EE7B7),
         border: retake ? const Color(0x59F43F5E) : const Color(0x5910B981),
@@ -264,14 +328,30 @@ class _EnrollPageState extends State<EnrollPage> {
                     style: const TextStyle(fontSize: 13, height: 19 / 13, color: Color(0xFFFDA4AF))),
             ],
             if (_error != null && _ready) ...[const SizedBox(height: 10), ErrorNote(_error!)],
-            const SizedBox(height: 14),
+            if (!ready) ...[
+              const SizedBox(height: 6),
+              Row(children: [
+                const Icon(Icons.auto_awesome, size: 16, color: Color(0xFFA5B4FC)),
+                const SizedBox(width: 6),
+                const Expanded(child: Text('Tự chụp khi mặt đạt yêu cầu', style: TextStyle(fontSize: 13, color: AppColors.heroText))),
+                Switch(
+                  value: _auto,
+                  onChanged: (v) => setState(() {
+                    _auto = v;
+                    _streak = 0;
+                    _hint = null;
+                  }),
+                ),
+              ]),
+            ],
+            const SizedBox(height: 8),
             SizedBox(
               height: 52,
               child: FilledButton.icon(
                 style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF020617), elevation: 0),
                 onPressed: !_ready || _busy ? null : (ready ? _send : _take),
                 icon: Icon(ready ? Icons.send : Icons.photo_camera, size: 20, color: AppColors.primary),
-                label: Text(_busy ? 'Đang xử lý…' : ready ? 'Gửi ảnh để duyệt' : 'Chụp ảnh ${_step + 1}'),
+                label: Text(_busy ? 'Đang xử lý…' : ready ? 'Gửi ảnh để duyệt' : _auto ? 'Chụp ngay ảnh ${_step + 1}' : 'Chụp ảnh ${_step + 1}'),
               ),
             ),
             const SizedBox(height: 12),

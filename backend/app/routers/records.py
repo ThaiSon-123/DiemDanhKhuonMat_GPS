@@ -15,6 +15,7 @@ from app.errors import ApiError
 from app.security import require_role
 from app.services import geo
 from app.services import sessions as svc
+from app.routers.me import ABSENCES_SQL
 
 router = APIRouter(tags=["records"])
 Lecturer = Depends(require_role("lecturer"))
@@ -55,17 +56,21 @@ def records(session_id: int, user=Lecturer, conn: psycopg.Connection = Depends(g
     s = svc.load_session_for_lecturer(conn, session_id, user["id"])
     rows = conn.execute(
         f"""SELECT r.student_id, u.student_code, u.full_name, r.status, r.decided_by, r.note,
+                   {ABSENCES_SQL.format(student='r.student_id')} AS absences,
                    (SELECT count(*) FROM checkin_attempts x WHERE x.session_id = r.session_id
                       AND x.student_id = r.student_id) AS attempt_count,
                    (SELECT row_to_json(t) FROM (SELECT {_ATTEMPT_COLS} FROM checkin_attempts a
                       WHERE a.session_id = r.session_id AND a.student_id = r.student_id
                       ORDER BY a.id DESC LIMIT 1) t) AS last_attempt
             FROM attendance_records r JOIN users u ON u.id = r.student_id
+            JOIN attendance_sessions s ON s.id = r.session_id JOIN classes c ON c.id = s.class_id
             WHERE r.session_id = %s ORDER BY u.student_code""", (session_id,)).fetchall()
+    limit = get_settings().attendance.warn_absent
+    rows = [{**r, "warn": r["absences"] >= limit} for r in rows]
     counts = dict.fromkeys(STATUSES, 0)
     for r in rows:
         counts[r["status"]] += 1
-    return {"session": _session_info(conn, s), "counts": counts, "records": rows}
+    return {"session": _session_info(conn, s), "counts": counts, "records": rows, "warn_absent": limit}
 
 
 def _record(conn: psycopg.Connection, session_id: int, student_id: int) -> dict:

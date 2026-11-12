@@ -35,12 +35,13 @@ class _StudentHomePageState extends State<StudentHomePage> {
     setState(() => _error = null);
     try {
       final api = widget.session.api;
-      final r = await Future.wait([api.get('/me'), api.get('/me/classes'), api.get('/me/attendance')]);
+      final r = await Future.wait([api.get('/me'), api.get('/me/classes'), api.get('/me/attendance'), api.get('/me/requests')]);
       if (!mounted) return;
       setState(() {
         _me = Map<String, dynamic>.from(r[0] as Map);
         _classes = [for (final c in r[1] as List) Map<String, dynamic>.from(c as Map)];
-        _notices = buildNotices(_me!, _classes!, [for (final a in r[2] as List) Map<String, dynamic>.from(a as Map)]);
+        _notices = buildNotices(_me!, _classes!, [for (final a in r[2] as List) Map<String, dynamic>.from(a as Map)],
+            requests: [for (final q in r[3] as List) Map<String, dynamic>.from(q as Map)]);
       });
     } on ApiError catch (e) {
       if (mounted) setState(() => _error = e.message);

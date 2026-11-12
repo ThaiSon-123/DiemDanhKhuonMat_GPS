@@ -281,6 +281,16 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ---
 
+## 1.9. Chức năng mở rộng (ngoài đặc tả)
+
+- [x] Bảng `requests` (migration 0003): đơn xin nghỉ (`leave`) và khiếu nại (`appeal`) cho buổi đã đóng, trong 14 ngày
+- [x] `POST /me/requests` (lý do + ảnh giấy tờ JPEG/PNG ≤ 5 MB, mã hóa), `GET /me/requests`
+- [x] `GET /requests`, `GET /requests/{id}/attachment` (ghi nhật ký), `POST /requests/{id}/decide` (xin nghỉ → vắng có phép, khiếu nại → có mặt; từ chối bắt buộc lý do)
+- [x] Cảnh báo chuyên cần: `attendance.warn_absent` (mặc định 3 buổi, chỉ tính buổi đã đóng); `absences`/`warn` trong `/me/classes`, `/sessions/{id}/records`, báo cáo
+- [x] `GET /admin/overview`: tỉ lệ có mặt theo lớp và học kỳ, sinh viên vắng nhiều, cờ đáng ngờ, lý do lượt không đạt
+- [x] `POST /faces/precheck`: kiểm tra nhanh một khung (chất lượng + hướng mặt) để app tự chụp
+- [x] `test_requests.py` (8 test)
+
 # 2. App Flutter (Android / iOS / Web)
 
 ## 2.1. Chung
@@ -290,6 +300,10 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] Nút đăng xuất
 - [x] Tự đổi mật khẩu (Tài khoản / thanh bên web); quản trị viên không tự đặt lại mật khẩu của mình; lệnh `python -m app.cli reset-password`
 - [x] **Thông báo** của sinh viên (phiên đang mở, kết quả duyệt mặt, quyết định của giảng viên trong 7 ngày)
+- [x] Sinh viên gửi **đơn xin nghỉ / khiếu nại** từ Lịch sử chuyên cần; thẻ cảnh báo vắng nhiều; kết quả đơn trong Thông báo
+- [x] Giảng viên duyệt đơn (tab **Đơn** trên dock, mục trên thanh bên web); nhãn đỏ "Vắng N buổi" ở Phiên đang chạy
+- [x] **Tự chụp** khi đăng ký khuôn mặt (2 khung đạt liên tiếp đúng hướng), vẫn có nút chụp tay
+- [x] Trang **Tổng quan** cho quản trị (mặc định khi đăng nhập)
 - [x] Màn **Quyền truy cập** (camera / vị trí / Bluetooth bị từ chối → giải thích + mở cài đặt; web: hướng dẫn biểu tượng ổ khóa)
 - [ ] `captureJpeg` (cạnh dài ≤ 1280 px, chất lượng 80)
 - [x] `GpsSampler` (thu mẫu thô, `minGood`, `minDuration`, `timeout`)
@@ -299,7 +313,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 - [x] **Trang chủ**: thẻ trạng thái khuôn mặt + danh sách lớp + nút "Điểm danh" khi có phiên mở + đồng hồ đếm ngược
 - [x] **Đồng ý dữ liệu** (hiện lại khi có phiên bản mới)
-- [x] **Đăng ký khuôn mặt**: hướng dẫn, khung oval, chụp thẳng / trái / phải, lý do từng ảnh không đạt (chụp bằng nút, chưa tự chụp)
+- [x] **Đăng ký khuôn mặt**: hướng dẫn, khung oval, chụp thẳng / trái / phải, lý do từng ảnh không đạt (tự chụp qua `/faces/precheck`, vẫn có nút chụp tay)
 - [x] **Khuôn mặt của tôi**: trạng thái, lý do từ chối, đăng ký lại, xóa dữ liệu (có xác nhận)
 - [x] **Điểm danh** bước 1: xin thử thách (`/student/checkin/:sid`)
 - [x] **Điểm danh** bước 2: quét QR (khi phiên bật mã phòng), kiểm tra đúng `session_id`, có ô nhập mã tay
@@ -343,6 +357,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] `checkin_controller_test.dart` (10/10) và `checkin_page_test.dart` (6/6)
 - [x] `lecturer_test.dart` (9/9): mở phiên, phiên đang chạy, tâm lệch, đóng phiên, chi tiết SV, chiếu mã, lịch sử phiên, báo cáo, lịch sử chuyên cần
 - [x] `shell_test.dart` (khung web giảng viên, chọn phiên chiếu, tự đổi mật khẩu), `notices_test.dart`
+- [x] `requests_test.dart` (đơn, cảnh báo, tổng quan); test tự chụp trong `enroll_test.dart`
 - [x] `enroll_test.dart` (đồng ý, đăng ký, quyền camera, xóa, duyệt)
 - [x] `home_pages_test.dart`, `admin_pages_test.dart` (trang chủ, quản trị)
 - [x] `flutter build web` thành công (và `flutter build apk --debug`)
@@ -438,7 +453,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 218 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 62 mục `[ ]` (285 items)
+**Tổng cộng**: 230 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 62 mục `[ ]` (297 items)
 
 ### Bước tiếp theo khuyến nghị
 

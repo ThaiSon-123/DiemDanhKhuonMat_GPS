@@ -52,6 +52,7 @@ void main() {
               'face': {'status': 'approved', 'reject_reason': null, 'model_ok': true, 'pending_update': false},
             }),
           '/me/attendance' => (200, []),
+          '/me/requests' => (200, []),
           '/me/classes' => (200, [
               {'id': 3, 'code': 'IT4060', 'name': 'Học máy', 'semester': '2026-1', 'lecturer_name': 'TS. Trần Minh Đức',
                'open_session': {'id': 41, 'expires_at': _soon, 'room_check': true}},
@@ -116,6 +117,8 @@ void main() {
       return (404, apiErr('NOT_FOUND', 'Không tìm thấy'));
     });
     await t.pump();
+    await t.tap(find.text('Người dùng')); // mặc định mở Tổng quan
+    await t.pumpAndSettle();
     expect(find.text('Người dùng'), findsWidgets);
     for (final n in ['412', '18', '37', '3']) {
       expect(find.text(n), findsOneWidget);

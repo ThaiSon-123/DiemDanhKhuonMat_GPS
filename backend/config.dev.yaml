@@ -36,4 +36,8 @@ session:
   room_token_window_s: 30
 retention:
   evidence_days: 30
+attendance:
+  warn_absent: 3        # vắng từ 3 buổi trở lên thì cảnh báo sinh viên và giảng viên
+  request_days: 14      # hạn gửi đơn xin nghỉ / khiếu nại sau buổi học
+  attachment_max_mb: 5
 campus_polygon_file: campus.dev.geojson
