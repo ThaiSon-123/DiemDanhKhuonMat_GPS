@@ -90,6 +90,8 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
   Map<String, dynamic>? _data;
   String? _error;
   int _filter = 1; // 0 tất cả, 1 đáng ngờ, 2 chưa
+  bool _picking = false; // chế độ chọn nhiều để điểm danh hàng loạt
+  final _picked = <int>{};
   bool _busy = false;
   Timer? _poll;
 
@@ -195,6 +197,7 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
                 ],
               ),
               Expanded(child: d == null ? LoadingOrError(error: _error, onRetry: _load) : _body(d)),
+              if (_picking) _bulkBar(),
             ]),
           ),
         ),
@@ -253,7 +256,32 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
           selected: _filter,
           onChanged: (i) => setState(() => _filter = i),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
+        Row(children: [
+          if (_picking) ...[
+            TextButton(
+              onPressed: () => setState(() => shown.every((r) => _picked.contains(r['student_id']))
+                  ? _picked.removeAll(shown.map((r) => r['student_id']))
+                  : _picked.addAll(shown.map((r) => r['student_id'] as int))),
+              child: Text(shown.isNotEmpty && shown.every((r) => _picked.contains(r['student_id']))
+                  ? 'Bỏ chọn cả mục này' : 'Chọn cả ${shown.length} người'),
+            ),
+          ] else
+            const Expanded(
+              child: Text('Mất mạng, GPS phòng hỏng?', overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            ),
+          if (_picking) const Spacer(),
+          TextButton.icon(
+            onPressed: () => setState(() {
+              _picking = !_picking;
+              _picked.clear();
+            }),
+            icon: Icon(_picking ? Icons.close : Icons.checklist, size: 18),
+            label: Text(_picking ? 'Thôi chọn' : 'Điểm danh hàng loạt'),
+          ),
+        ]),
+        const SizedBox(height: 4),
         if (shown.isEmpty)
           const Padding(
             padding: EdgeInsets.all(24),
@@ -261,14 +289,84 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
                 style: TextStyle(color: AppColors.textMuted)),
           ),
         for (final (i, r) in shown.indexed) ...[
-          _Row(r, colors: avatarColors[i % avatarColors.length], onTap: () async {
-            await context.push('/lecturer/session/${widget.sessionId}/student/${r['student_id']}');
-            _load();
-          }),
+          _Row(r, colors: avatarColors[i % avatarColors.length], picked: _picking ? _picked.contains(r['student_id']) : null,
+              onTap: _picking
+                  ? () => setState(() => _picked.contains(r['student_id'])
+                      ? _picked.remove(r['student_id'])
+                      : _picked.add(r['student_id'] as int))
+                  : () async {
+                      await context.push('/lecturer/session/${widget.sessionId}/student/${r['student_id']}');
+                      _load();
+                    }),
           const SizedBox(height: 10),
         ],
       ]),
     );
+  }
+
+  /// Thanh dưới khi chọn nhiều: đặt cùng trạng thái cho mọi người đã chọn (PATCH /sessions/{id}/records).
+  Widget _bulkBar() {
+    final n = _picked.length;
+    Widget btn(String label, String status, Color fg, Color bg) => Expanded(
+          child: SizedBox(
+            height: 44,
+            child: FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: bg, foregroundColor: fg, elevation: 0, minimumSize: const Size(0, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+              onPressed: n == 0 || _busy ? null : () => _bulk(status, label),
+              child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+            ),
+          ),
+        );
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AppColors.cardBorder)),
+          boxShadow: [BoxShadow(color: Color(0x140F172A), blurRadius: 20, offset: Offset(0, -4))]),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(n == 0 ? 'Chạm vào sinh viên để chọn' : 'Đã chọn $n sinh viên, đặt thành:',
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textLabel)),
+        const SizedBox(height: 8),
+        Row(children: [
+          btn('Có mặt', 'manual_present', Colors.white, AppColors.present),
+          const SizedBox(width: 6),
+          btn('Có phép', 'excused', AppColors.textLabel, const Color(0xFFF1F5F9)),
+          const SizedBox(width: 6),
+          btn('Vắng', 'absent', AppColors.absentText, AppColors.absentSoft),
+        ]),
+      ]),
+    );
+  }
+
+  Future<void> _bulk(String status, String label) async {
+    final note = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text('Đặt "$label" cho ${_picked.length} sinh viên?'),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const Text('Kết quả bị khóa như duyệt tay; mỗi người được ghi vào nhật ký.'),
+          const SizedBox(height: 12),
+          TextField(controller: note, maxLength: 500,
+              decoration: const InputDecoration(labelText: 'Ghi chú (vd: mất mạng, điểm danh tay)', counterText: '')),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Hủy')),
+          FilledButton(style: dialogButtonStyle, onPressed: () => Navigator.pop(c, true), child: const Text('Xác nhận')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final ids = _picked.toList();
+    await _act(() => widget.session.api.patch('/sessions/${widget.sessionId}/records',
+        data: {'student_ids': ids, 'status': status, 'note': note.text.trim().isEmpty ? null : note.text.trim()}),
+        'Đã đặt "$label" cho ${ids.length} sinh viên');
+    if (mounted) {
+      setState(() {
+        _picking = false;
+        _picked.clear();
+      });
+    }
   }
 }
 
@@ -343,7 +441,10 @@ class _RecenterBanner extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row(this.r, {required this.colors, required this.onTap});
+  const _Row(this.r, {required this.colors, required this.onTap, this.picked});
+
+  /// null: không ở chế độ chọn; true/false: ô đánh dấu.
+  final bool? picked;
   final Map<String, dynamic> r;
   final (Color, Color) colors;
   final VoidCallback onTap;
@@ -377,7 +478,10 @@ class _Row extends StatelessWidget {
                 ]),
               ]),
             ),
-            const Icon(Icons.chevron_right, size: 20, color: Color(0xFF94A3B8)),
+            if (picked == null)
+              const Icon(Icons.chevron_right, size: 20, color: Color(0xFF94A3B8))
+            else
+              Checkbox(value: picked, onChanged: (_) => onTap()),
           ]),
         ),
       ),

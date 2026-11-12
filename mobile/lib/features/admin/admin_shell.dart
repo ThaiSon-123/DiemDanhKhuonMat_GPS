@@ -7,6 +7,7 @@ import 'admin_widgets.dart';
 import '../faces/face_review_page.dart';
 import '../lecturer/report_page.dart';
 import 'audit_page.dart';
+import 'banned_page.dart';
 import 'classes_page.dart';
 import 'import_page.dart';
 import 'overview_page.dart';
@@ -19,6 +20,7 @@ const _nav = <WebNavItem>[
   WebNavItem('Quản lý', Icons.upload_outlined, 'Nhập CSV'),
   WebNavItem('Giám sát', Icons.how_to_reg_outlined, 'Duyệt khuôn mặt'),
   WebNavItem('Giám sát', Icons.bar_chart, 'Báo cáo'),
+  WebNavItem('Giám sát', Icons.block, 'Cấm thi'),
   WebNavItem('Giám sát', Icons.list_alt, 'Nhật ký'),
 ];
 
@@ -56,7 +58,8 @@ class _AdminShellState extends State<AdminShell> {
         3 => ImportPage(key: _importKey, session: widget.session),
         4 => FaceReviewPage(session: widget.session),
         5 => ReportPage(session: widget.session),
-        6 => AuditPage(session: widget.session),
+        6 => BannedPage(session: widget.session),
+        7 => AuditPage(session: widget.session),
         _ => Center(child: Text('Màn "$label" đang được xây dựng.', style: const TextStyle(color: AppColors.textMuted))),
       };
 

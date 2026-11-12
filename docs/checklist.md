@@ -1,6 +1,6 @@
 # Checklist Tiến Độ - Ứng Dụng Điểm Danh Khuôn Mặt + GPS
 
-Tham chiếu: [`dac-ta-thiet-ke.md`](./dac-ta-thiet-ke.md) (đặc tả bản 2), [`plan.md`](./plan.md) (task T0 → T20), [`huong-dan-cai-dat.md`](./huong-dan-cai-dat.md) (lệnh cài đặt, Docker, triển khai).
+Tham chiếu: [`dac-ta-thiet-ke.md`](./dac-ta-thiet-ke.md) (đặc tả bản 3, chức năng mở rộng ở §4.8), [`plan.md`](./plan.md) (task T0 → T26, bảng tiến độ ở đầu file), [`huong-dan-cai-dat.md`](./huong-dan-cai-dat.md) (lệnh cài đặt, Docker, triển khai), [`huong-dan-chay-thu.md`](./huong-dan-chay-thu.md) (chạy thử trọn luồng trên PC).
 
 Quy ước:
 
@@ -281,7 +281,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 ---
 
-## 1.9. Chức năng mở rộng (ngoài đặc tả)
+## 1.12. Chức năng mở rộng (T21 → T25, §4.8)
 
 - [x] Bảng `requests` (migration 0003): đơn xin nghỉ (`leave`) và khiếu nại (`appeal`) cho buổi đã đóng, trong 14 ngày
 - [x] `POST /me/requests` (lý do + ảnh giấy tờ JPEG/PNG ≤ 5 MB, mã hóa), `GET /me/requests`
@@ -291,6 +291,10 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] `POST /faces/precheck`: kiểm tra nhanh một khung (chất lượng + hướng mặt) để app tự chụp
 - [x] `test_requests.py` (8 test)
 - [x] Báo cáo nộp khoa: `GET /reports/classes/{id}?format=xlsx` (sheet Tổng hợp + Chi tiết buổi, tô đỏ SV vắng nhiều, chỗ ký) và `?format=pdf` (A4, font Inter tiếng Việt); tên trường/khoa trong `report:` của `config.yaml`
+- [x] Lịch học `class_schedules` (migration 0004): `GET/POST /admin/classes/{id}/schedules`, `DELETE /admin/schedules/{id}`; `schedules` trong `/me/classes`
+- [x] Điểm danh hàng loạt `PATCH /sessions/{id}/records` (nhiều sinh viên, ghi nhật ký từng người)
+- [x] Điểm chuyên cần (`grading.scale`, có phép tính như có mặt) và cấm thi (`grading.ban_absent_pct` = 20 %) trong báo cáo, CSV, Excel, PDF
+- [x] `GET /admin/banned` (JSON, Excel, PDF có chỗ ký trưởng khoa); `test_schedule_grading.py` (4 test)
 
 # 2. App Flutter (Android / iOS / Web)
 
@@ -305,6 +309,9 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] Giảng viên duyệt đơn (tab **Đơn** trên dock, mục trên thanh bên web); nhãn đỏ "Vắng N buổi" ở Phiên đang chạy
 - [x] **Tự chụp** khi đăng ký khuôn mặt (2 khung đạt liên tiếp đúng hướng), vẫn có nút chụp tay
 - [x] Trang **Tổng quan** cho quản trị (mặc định khi đăng nhập)
+- [x] **Lịch học**: quản trị nhập ở trang Lớp; sinh viên thấy *Lịch hôm nay* + cả tuần, được nhắc trước 30 phút; giảng viên thấy lịch trên thẻ lớp
+- [x] **Điểm danh hàng loạt** ở Phiên đang chạy (chọn nhiều → Có mặt / Có phép / Vắng)
+- [x] Cột **Điểm CC** và nhãn **Cấm thi** ở báo cáo; trang **Cấm thi** cho quản trị (xuất PDF / Excel)
 - [x] Màn **Quyền truy cập** (camera / vị trí / Bluetooth bị từ chối → giải thích + mở cài đặt; web: hướng dẫn biểu tượng ổ khóa)
 - [ ] `captureJpeg` (cạnh dài ≤ 1280 px, chất lượng 80)
 - [x] `GpsSampler` (thu mẫu thô, `minGood`, `minDuration`, `timeout`)
@@ -359,6 +366,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] `lecturer_test.dart` (9/9): mở phiên, phiên đang chạy, tâm lệch, đóng phiên, chi tiết SV, chiếu mã, lịch sử phiên, báo cáo, lịch sử chuyên cần
 - [x] `shell_test.dart` (khung web giảng viên, chọn phiên chiếu, tự đổi mật khẩu), `notices_test.dart`
 - [x] `requests_test.dart` (đơn, cảnh báo, tổng quan); test tự chụp trong `enroll_test.dart`
+- [x] `extras_test.dart` (nhắc giờ, điểm danh hàng loạt, điểm CC, cấm thi)
 - [x] `enroll_test.dart` (đồng ý, đăng ký, quyền camera, xóa, duyệt)
 - [x] `home_pages_test.dart`, `admin_pages_test.dart` (trang chủ, quản trị)
 - [x] `flutter build web` thành công (và `flutter build apk --debug`)
@@ -454,14 +462,15 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 231 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 62 mục `[ ]` (298 items)
+**Tổng cộng**: 239 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 62 mục `[ ]` (306 items)
 
 ### Bước tiếp theo khuyến nghị
 
-1. **Bật Docker, chạy thử trọn luồng trên máy thật**: giảng viên mở phiên → chiếu mã → sinh viên điểm danh → duyệt → đóng → xuất CSV
-2. **T20 · Triển khai** lên VPS (Dockerfile, compose có Caddy, cron dọn dữ liệu + sao lưu); thử trên Android thật, chốt ngưỡng (T11)
-3. **Bật Docker**: chạy `alembic upgrade head` và `create-admin --username admin` để thử app thật
-4. **Gửi nhà trường xin phép** (mục 6) và lấy tọa độ đa giác khuôn viên thật cho `campus.geojson`
+1. **Thử trên Android thật** (mục 13 của `huong-dan-chay-thu.md`): GPS thật, camera trước, chốt `yaw_sign`, tự chụp, quét QR
+2. **T11 · Chốt ngưỡng khuôn mặt**: ảnh 10–30 tình nguyện viên (có đồng ý) + ảnh giả → FAR, FRR, EER, APCER / BPCER
+3. **T20 · Triển khai** lên VPS (Dockerfile, compose có Caddy, cron dọn dữ liệu + sao lưu), chạy thử một lớp thật
+4. **Gửi nhà trường xin phép** (mục 6), lấy đa giác khuôn viên thật cho `campus.geojson`, sửa tên trường / khoa ở `report:`
+5. **T26 · Artboard canvas** cho các màn mở rộng (Đơn, gửi đơn, lịch học, điểm danh hàng loạt, Tổng quan, Cấm thi)
 
 ---
 
@@ -479,3 +488,17 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 
 - 1.2 Auth, 1.3 Quản trị, 1.4 /me, T6 mã hóa, T12 hàm vị trí, T13 mã phòng xong
 - Đổi cách đăng nhập: thêm cột `username` cho mọi tài khoản (migration 0002), email thành tùy chọn; CSV `users` thêm cột `username`; `create-admin --username`
+
+### Phase 2 — App và chạy thử trên PC (2026-11-11 → 2026-11-12)
+
+- T15–T19 xong: điểm danh 6 bước (app + backend), theo dõi phiên, duyệt tay, tính lại tâm, ảnh bằng chứng, báo cáo, chiếu mã phòng, lịch sử
+- Chạy thử trọn luồng trên PC: Postgres nhúng hoặc Docker (`scripts/dev_backend.ps1`), `config.dev.yaml` + `DEV_GPS` vì PC định vị sai cả km, dữ liệu mẫu CSV
+- Sửa theo phản hồi: bố cục web rộng hơn, hộp thoại theo thiết kế; chặn quản trị viên tự đặt lại mật khẩu, thêm `reset-password`
+- T17 dọn dữ liệu; tự đổi mật khẩu, thông báo, khung web giảng viên có thanh bên
+
+### Phase 3 — Chức năng mở rộng (2026-11-12)
+
+- Đơn xin nghỉ / khiếu nại (migration 0003), cảnh báo chuyên cần, tự chụp khi đăng ký (`/faces/precheck`), Tổng quan quản trị
+- Báo cáo Excel / PDF nộp khoa (openpyxl, fpdf2, font Inter)
+- Lịch học + nhắc giờ (migration 0004), điểm danh hàng loạt, điểm chuyên cần, danh sách cấm thi
+- Đặc tả lên bản 3 (mục 4.8, Phụ lục B); 230 test backend, 68 test Flutter

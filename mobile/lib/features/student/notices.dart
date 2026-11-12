@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
+import '../schedule.dart';
 
 /// Một thông báo dựng từ dữ liệu sẵn có (/me, /me/classes, /me/attendance), không có bảng thông báo riêng.
 class Notice {
@@ -48,6 +49,11 @@ List<Notice> buildNotices(Map<String, dynamic> me, List<Map<String, dynamic>> cl
         ok ? AppColors.presentSoft : AppColors.absentSoft, '$kind ${r['class_code']} ${ok ? 'được duyệt' : 'bị từ chối'}',
         ok ? (r['kind'] == 'leave' ? 'Buổi đó được ghi vắng có phép.' : 'Buổi đó được ghi có mặt.')
             : 'Lý do: ${r['decision_note'] ?? 'không ghi'}', route: '/student/history'));
+  }
+  for (final s in upcomingSlots(classes, now: t)) {
+    if (s.cls['open_session'] != null) continue; // đã có thông báo "đang mở điểm danh"
+    out.add(Notice(Icons.alarm, AppColors.primary, AppColors.primarySoft, 'Sắp đến giờ học ${s.cls['code']}',
+        '${s.cls['name']} lúc ${s.start}${s.where}. Nhớ bật Wi-Fi, vị trí để điểm danh nhanh.', route: '/student'));
   }
   final face = me['face'] as Map?;
   switch (face?['status']) {

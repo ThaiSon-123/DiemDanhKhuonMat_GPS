@@ -26,7 +26,7 @@ def test_migration_creates_all_tables(conn):
     names = {r["table_name"] for r in conn.execute(
         "SELECT table_name FROM information_schema.tables "
         "WHERE table_schema = 'public' AND table_name <> 'alembic_version'")}
-    assert names == TEN_TABLES | {"requests"}  # 0003: đơn xin nghỉ / khiếu nại
+    assert names == TEN_TABLES | {"requests", "class_schedules"}  # 0003 đơn, 0004 lịch học
 
 
 def test_fixtures_insert_rows(make_user, make_class, enroll, conn):

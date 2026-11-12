@@ -1,5 +1,7 @@
 # Hướng dẫn cài đặt và xây dựng: từng bước từ máy phát triển đến VPS
 
+> **Chỉ muốn chạy thử dự án đã có sẵn?** Xem [huong-dan-chay-thu.md](huong-dan-chay-thu.md): hai lệnh là bật được backend và app web (có thể không cần Docker).
+
 Làm theo thứ tự từ trên xuống. Mỗi bước có lệnh chạy và **kết quả mong đợi**; chỉ đánh dấu `[x]` khi thấy đúng kết quả đó. Lệnh viết cho **Windows PowerShell** (máy phát triển) và **bash** (VPS Ubuntu). Phần code của từng tính năng làm theo [plan.md](plan.md); yêu cầu nằm ở [dac-ta-thiet-ke.md](dac-ta-thiet-ke.md).
 
 ---
@@ -113,7 +115,7 @@ Làm theo thứ tự từ trên xuống. Mỗi bước có lệnh chạy và **k
   ```
   Nếu PowerShell chặn script: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. Mong đợi: dấu nhắc lệnh có tiền tố `(.venv)`.
 
-- [ ] Tạo `backend/pyproject.toml`:
+- [ ] `backend/pyproject.toml` (bản hiện tại trong repo):
 
   ```toml
   [project]
@@ -121,28 +123,41 @@ Làm theo thứ tự từ trên xuống. Mỗi bước có lệnh chạy và **k
   version = "0.1.0"
   requires-python = ">=3.12"
   dependencies = [
-    "fastapi", "uvicorn[standard]", "python-multipart",
-    "psycopg[binary,pool]", "alembic", "sqlalchemy",
-    "pydantic", "pyyaml", "pyjwt", "argon2-cffi", "cryptography",
-    "numpy", "opencv-python-headless", "onnxruntime",
+    "fastapi",
+    "uvicorn[standard]",
+    "psycopg[binary,pool]",
+    "alembic",
+    "sqlalchemy",
+    "pydantic",
+    "pyyaml",
+    "argon2-cffi",
+    "pyjwt",
+    "python-dotenv",
+    "cryptography",
+    "numpy",
+    "onnxruntime",
+    "opencv-python-headless",  # máy dev cài thêm opencv-python để spike_face.py mở được cửa sổ webcam
+    "python-multipart",  # nhận ảnh multipart ở /faces/enroll và /checkin
+    "openpyxl",  # báo cáo Excel
+    "fpdf2",     # báo cáo PDF (font Inter trong app/fonts, có tiếng Việt)
   ]
 
   [project.optional-dependencies]
-  dev = ["pytest", "httpx", "freezegun", "pgserver", "locust"]
-
-  [tool.pytest.ini_options]
-  testpaths = ["tests"]
-  markers = ["models: cần file mô hình ONNX trong backend/models"]
+  dev = ["pytest", "httpx", "pgserver"]
 
   [tool.setuptools]
   packages = ["app"]
+
+  [tool.pytest.ini_options]
+  testpaths = ["tests"]
+  markers = ["models: cần file mô hình .onnx trong backend/models (tự bỏ qua nếu thiếu)"]
   ```
 
 - [ ] Cài thư viện
 
   ```powershell
   pip install -e ".[dev]"
-  python -c "import fastapi, psycopg, cv2, onnxruntime; print('ok')"
+  python -c "import fastapi, psycopg, cv2, onnxruntime, openpyxl, fpdf; print('ok')"
   ```
   Mong đợi: in ra `ok`.
 
@@ -160,11 +175,18 @@ Làm theo thứ tự từ trên xuống. Mỗi bước có lệnh chạy và **k
   python -c "import os,base64; print(base64.b64encode(os.urandom(32)).decode())"
   ```
 
-- [ ] Tạo `backend/config.yaml` (lấy theo mục 9.4 của đặc tả cộng phần Global Constraints trong plan) và `backend/campus.geojson` (vẽ trên geojson.io, lưu một Polygon).
+- [ ] `backend/config.yaml` (mục 9.4 của đặc tả) và `backend/campus.geojson` (vẽ trên geojson.io, lưu một Polygon; bản trong repo đang là **bản tạm**).
+  - Sửa tên trường / khoa ở mục `report:` (in trên báo cáo Excel / PDF), công thức điểm và ngưỡng cấm thi ở `grading:`, ngưỡng cảnh báo vắng ở `attendance:`.
+  - `config.dev.yaml` + `campus.dev.geojson`: bản cho máy dev (nới ngưỡng GPS, khuôn viên phủ cả nước), bật bằng biến `CONFIG_FILE=config.dev.yaml`. Không dùng trên server thật.
 
 ---
 
 ## Bước 4. Dựng database PostgreSQL cho phát triển
+
+Hai cách, chọn một:
+
+- **Không cần Docker** (nhanh nhất): Postgres nhúng `pgserver` (đã có trong `.[dev]`). `python scripts\dev_db.py` bật server ở `backend/.pgdata` và in `DATABASE_URL`; script `scripts\dev_backend.ps1` (bước 5) làm việc này tự động. Mỗi lần bật lại có thể đổi cổng nên luôn lấy URL từ script.
+- **Docker** (giống server thật): làm các mục dưới đây.
 
 - [ ] Tạo `deploy/docker-compose.dev.yml`:
 
@@ -207,7 +229,7 @@ Làm theo thứ tự từ trên xuống. Mỗi bước có lệnh chạy và **k
   alembic upgrade head
   docker compose -f ..\deploy\docker-compose.dev.yml exec db psql -U app -d diemdanh -c "\dt"
   ```
-  Mong đợi: liệt kê 10 bảng (`users`, `classes`, `enrollments`, `consents`, `face_templates`, `attendance_sessions`, `challenges`, `checkin_attempts`, `attendance_records`, `audit_log`) và `alembic_version`.
+  Mong đợi: liệt kê 12 bảng (`users`, `classes`, `enrollments`, `consents`, `face_templates`, `attendance_sessions`, `challenges`, `checkin_attempts`, `attendance_records`, `audit_log`, `requests`, `class_schedules`) và `alembic_version`. Migration hiện có: `0001` (khởi tạo), `0002` (đăng nhập bằng `username`), `0003` (đơn xin nghỉ / khiếu nại), `0004` (lịch học).
 
 - [ ] Commit: `git commit -am "feat(db): docker postgres dev và migration 0001"`
 
@@ -216,20 +238,31 @@ Làm theo thứ tự từ trên xuống. Mỗi bước có lệnh chạy và **k
 ## Bước 5. Chạy backend lần đầu
 
 - [ ] Làm **Task 1** trong plan.md: `app/main.py`, `config.py`, `db.py`, `errors.py`, `tests/conftest.py`. Trong `main.py` thêm `CORSMiddleware` với `allow_origin_regex` lấy từ biến `CORS_ORIGIN_REGEX`; nếu thiếu thì Flutter Web không gọi được API.
-- [ ] Chạy server
+- [ ] Chạy server bằng script dev (bật CSDL, chạy migration, chạy uvicorn với `config.dev.yaml`):
 
   ```powershell
   cd D:\DiemDanhKhuonMat_GPS\backend
-  uvicorn app.main:app --reload --env-file .env
+  powershell -ExecutionPolicy Bypass -File scripts\dev_backend.ps1            # Postgres nhúng, không cần Docker
+  powershell -ExecutionPolicy Bypass -File scripts\dev_backend.ps1 -Docker    # dùng container db và DATABASE_URL trong .env
+  powershell -ExecutionPolicy Bypass -File scripts\dev_backend.ps1 -Docker -Lan   # cho điện thoại cùng Wi-Fi gọi được
   ```
+  Hoặc chạy tay với cấu hình thật: `uvicorn app.main:app --reload --env-file .env`.
   Mong đợi: mở `http://localhost:8000/docs` thấy trang Swagger.
+
+- [ ] Tạo quản trị viên đầu tiên (in mật khẩu tạm, lần đăng nhập đầu phải đổi):
+
+  ```powershell
+  .\.venv\Scripts\python.exe -m app.cli create-admin --username admin
+  .\.venv\Scripts\python.exe -m app.cli reset-password --username admin   # khi quên mật khẩu
+  ```
+  Dùng Postgres nhúng thì chạy trước: `$env:DATABASE_URL = (.\.venv\Scripts\python.exe scripts\dev_db.py)`.
 
 - [ ] Chạy test
 
   ```powershell
   pytest -v
   ```
-  Mong đợi: tất cả xanh. Test dùng `pgserver` nên không cần Docker; đặt `DATABASE_URL` thì test sẽ dùng database đó.
+  Mong đợi: tất cả xanh (hiện 230 test; `-m "not models"` để bỏ các test cần file mô hình). Test dùng `pgserver` riêng nên không cần Docker và **không bao giờ** đụng `DATABASE_URL` (mỗi test xóa sạch bảng); muốn dùng database có sẵn thì đặt `TEST_DATABASE_URL`.
 
 ---
 
@@ -262,8 +295,7 @@ Làm theo thứ tự từ trên xuống. Mỗi bước có lệnh chạy và **k
   cd D:\DiemDanhKhuonMat_GPS
   flutter create --org vn.edu.truong --platforms=android,ios,web mobile
   cd mobile
-  flutter pub add dio go_router flutter_secure_storage camera geolocator mobile_scanner uuid
-  flutter pub add --dev mocktail
+  flutter pub add dio go_router flutter_secure_storage camera geolocator mobile_scanner uuid web clock qr_flutter image_picker
   ```
 
 - [ ] **Quyền trên Android**: trong `android/app/src/main/AndroidManifest.xml`, ngay trong thẻ `<manifest>`:
@@ -294,6 +326,7 @@ Làm theo thứ tự từ trên xuống. Mỗi bước có lệnh chạy và **k
   ```powershell
   flutter run -d emulator-5554 --dart-define=API_URL=http://10.0.2.2:8000   # máy ảo Android: 10.0.2.2 trỏ về máy tính
   flutter run -d web-server --web-port 8091 --dart-define=API_URL=http://localhost:8000   # bản web: mở http://localhost:8091 (lần đầu chờ ~15 s)
+  # Thử trên PC (GPS qua Wi-Fi sai hàng trăm mét): thêm --dart-define=DEV_GPS=true và chạy backend bằng dev_backend.ps1
   # Không dùng `-d chrome` trên Windows: Chrome gỡ lỗi hay không kết nối được ($dwdsSseHandler) nên trang trắng.
   ```
   Mong đợi: app mở được và gọi được `/docs` hoặc `/auth/login`.
@@ -307,7 +340,7 @@ Làm theo thứ tự từ trên xuống. Mỗi bước có lệnh chạy và **k
   ```
   Lưu ý: camera và GPS phải thử trên **máy thật**, máy ảo không đại diện được.
 
-- [ ] Chạy test Flutter: `flutter test` → tất cả xanh.
+- [ ] Chạy test Flutter: `flutter test` → tất cả xanh (hiện 68 test).
 - [ ] Commit: `git commit -am "feat(mobile): khởi tạo app Flutter, quyền camera và vị trí"`
 
 ---
@@ -316,12 +349,14 @@ Làm theo thứ tự từ trên xuống. Mỗi bước có lệnh chạy và **k
 
 Mỗi task: viết test → thấy test đỏ → viết code → thấy test xanh → commit. Chi tiết ở [plan.md](plan.md).
 
-- [ ] T0 Spike mô hình — 🚦 anti-spoofing tách được ảnh thật với ảnh giả
-- [ ] T1 Khung backend · T2 Xác thực · T3 Quản trị, nhập CSV · T4 `/me` · T5 Khung app Flutter — 🚦 đăng nhập được trên app và web
-- [ ] T6 Mã hoá · T7 Kiểm tra khuôn mặt · T8 Engine ONNX · T9 API khuôn mặt · T10 Màn hình đăng ký
-- [ ] T11 Thí nghiệm chọn mô hình — 🚦 chốt `model_name` và ngưỡng trong `config.yaml`
-- [ ] T12 Hàm vị trí · T13 Mã phòng · T14 Phiên · T15 Điểm danh 6 bước · T16 Duyệt, báo cáo · T17 Dọn dữ liệu
-- [ ] T18 Điểm danh trên app · T19 Màn hình giảng viên, quản trị viên — 🚦 chạy trọn một vòng: nhập CSV → đăng ký → duyệt → mở phiên → điểm danh → duyệt → đóng → xuất CSV
+- [x] T0 Spike mô hình — 🚦 anti-spoofing tách được ảnh thật với ảnh giả (ngưỡng tạm, xem `experiments/spike.md`)
+- [x] T1 Khung backend · T2 Xác thực · T3 Quản trị, nhập CSV · T4 `/me` · T5 Khung app Flutter — 🚦 đăng nhập được trên app và web
+- [x] T6 Mã hoá · T7 Kiểm tra khuôn mặt · T8 Engine ONNX · T9 API khuôn mặt · T10 Màn hình đăng ký
+- [ ] T11 Thí nghiệm chọn mô hình — 🚦 chốt `model_name` và ngưỡng trong `config.yaml` (cần dữ liệu tình nguyện viên)
+- [x] T12 Hàm vị trí · T13 Mã phòng · T14 Phiên · T15 Điểm danh 6 bước · T16 Duyệt, báo cáo · T17 Dọn dữ liệu
+- [x] T18 Điểm danh trên app · T19 Màn hình giảng viên, quản trị viên
+- [x] T21–T25 Chức năng mở rộng (đặc tả mục 4.8): đơn xin nghỉ / khiếu nại, cảnh báo chuyên cần, lịch học, điểm chuyên cần, cấm thi, báo cáo Excel / PDF, tổng quan
+- [ ] 🚦 Chạy trọn một vòng trên máy thật: nhập CSV → đăng ký → duyệt → mở phiên → điểm danh → duyệt → đóng → xuất Excel / PDF (đã chạy được trên PC theo [huong-dan-chay-thu.md](huong-dan-chay-thu.md))
 
 Sau mỗi task chạy lại toàn bộ test: `pytest -v` (trong `backend`) và `flutter test` (trong `mobile`).
 

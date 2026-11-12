@@ -6,6 +6,7 @@ import '../../core/session.dart';
 import '../../ui/neo.dart';
 import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
+import '../schedule.dart';
 import 'notices.dart';
 import 'student_nav.dart';
 
@@ -74,6 +75,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
         if (_enrollNote(me) case final note?) ...[_EnrollCard(note: note, onTap: () => goEnroll(context, me)), const SizedBox(height: 14)],
         if (live.isEmpty) const _NoSessionCard() else for (final c in live) ...[_LiveCard(c), const SizedBox(height: 14)],
         if (live.isEmpty) const SizedBox(height: 14),
+        if (slotsOf(classes).isNotEmpty) ...[TodaySchedule(classes: classes), const SizedBox(height: 14)],
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(children: [

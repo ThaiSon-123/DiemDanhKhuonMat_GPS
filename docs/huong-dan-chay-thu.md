@@ -2,7 +2,7 @@
 
 Mục tiêu: chạy trọn một vòng nhập CSV → đăng ký mặt → duyệt → mở phiên → điểm danh → duyệt tay → đóng → báo cáo, chỉ với một máy tính có webcam.
 
-> Chế độ dev nới ngưỡng GPS (50 km) và dùng khuôn viên phủ cả Việt Nam (`config.dev.yaml`, `campus.dev.geojson`), vì PC định vị qua Wi-Fi sai hàng trăm mét. Chỉ để thử luồng, **không** phản ánh độ chính xác thật. Ngưỡng thật thử trên điện thoại (mục 8).
+> Chế độ dev nới ngưỡng GPS (50 km) và dùng khuôn viên phủ cả Việt Nam (`config.dev.yaml`, `campus.dev.geojson`), vì PC định vị qua Wi-Fi sai hàng trăm mét. Chỉ để thử luồng, **không** phản ánh độ chính xác thật. Ngưỡng thật thử trên điện thoại (mục 13).
 
 ## 1. Bật hệ thống
 
@@ -105,7 +105,7 @@ Cửa sổ ẩn danh:
 5. Quản trị cũng xem được báo cáo ở mục **Báo cáo**.
 6. Sinh viên mở tab **Lịch sử** để thấy buổi vừa điểm danh.
 
-## 8b. Những phần khác nên thử
+## 9. Những phần khác nên thử
 
 - **Đổi mật khẩu**: sinh viên ở tab Tài khoản (biểu tượng ổ khóa), giảng viên ở bảng Tài khoản trên dock, quản trị và giảng viên trên web ở menu ⋮ cạnh tên.
 - **Thông báo** (chuông trên trang chủ sinh viên): có chấm đỏ khi lớp đang mở điểm danh hoặc ảnh khuôn mặt bị từ chối.
@@ -113,7 +113,7 @@ Cửa sổ ẩn danh:
 - **Quên mật khẩu quản trị**: `.\.venv\Scripts\python.exe -m app.cli reset-password --username admin` (in mật khẩu tạm mới).
 - **Dọn dữ liệu cũ**: `.\.venv\Scripts\python.exe -m app.jobs.cleanup` (trên VPS chạy bằng cron hằng ngày).
 
-## 8c. Đơn xin nghỉ, khiếu nại, cảnh báo, tổng quan
+## 10. Đơn xin nghỉ, khiếu nại, cảnh báo, tổng quan
 
 1. Giảng viên mở rồi **đóng** một phiên mà `sv002` không điểm danh.
 2. `sv002` → tab **Lịch sử** → buổi đó → **Xin nghỉ / khiếu nại**: chọn loại, ghi lý do, đính kèm ảnh (tùy chọn) → **Gửi đơn**.
@@ -123,7 +123,16 @@ Cửa sổ ẩn danh:
 5. Quản trị đăng nhập vào thẳng trang **Tổng quan** (tỉ lệ có mặt theo lớp, cờ đáng ngờ, lý do không đạt).
 6. Đăng ký khuôn mặt: bật **Tự chụp** (mặc định), nhìn thẳng → quay trái → quay phải theo gợi ý, máy tự giữ ảnh.
 
-## 9. Lỗi thường gặp
+## 11. Lịch học, điểm danh hàng loạt, điểm chuyên cần, cấm thi
+
+1. Quản trị → **Lớp** → chọn lớp → mục **Lịch học hằng tuần**: chọn thứ, giờ, phòng → **Thêm lịch**.
+   Sinh viên thấy *Lịch hôm nay* trên trang chủ (nút **Cả tuần**) và thông báo "Sắp đến giờ học" trước 30 phút.
+2. Giảng viên → **Phiên đang chạy** → **Điểm danh hàng loạt** → chạm chọn nhiều sinh viên → **Có mặt / Có phép / Vắng**.
+3. **Báo cáo** có cột **Điểm CC** (thang 10) và nhãn **Cấm thi**; Excel/PDF cũng có.
+4. Quản trị → **Cấm thi**: danh sách theo học kỳ, xuất **PDF nộp phòng đào tạo** hoặc Excel.
+   Công thức và ngưỡng sửa ở mục `grading:` trong `backend/config.yaml`.
+
+## 12. Lỗi thường gặp
 
 | Hiện tượng | Cách xử lý |
 | --- | --- |
@@ -135,7 +144,7 @@ Cửa sổ ẩn danh:
 | Trang trắng | Chờ thêm khoảng 20 giây ở lần đầu, rồi bấm F5 |
 | Muốn xóa sạch dữ liệu thử | Tắt backend; trong PowerShell ở thư mục backend chạy `.\.venv\Scripts\python.exe -c "import pgserver; pgserver.get_server('.pgdata', cleanup_mode=None).cleanup()"`; xóa thư mục `backend\.pgdata` và `STORAGE_DIR` |
 
-## 10. Thử trên điện thoại thật (bước sau)
+## 13. Thử trên điện thoại thật (bước sau)
 
 Đây là bước để thấy GPS thật và camera trước của điện thoại:
 

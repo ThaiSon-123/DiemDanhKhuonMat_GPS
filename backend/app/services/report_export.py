@@ -19,7 +19,8 @@ FONTS = Path(__file__).resolve().parent.parent / "fonts"
 # Ký hiệu mỗi ô của bảng chi tiết buổi.
 MARK = {"present": "C", "manual_present": "C", "excused": "P", "absent": "V", "rejected": "V", "suspicious": "?"}
 LEGEND = "C: có mặt · P: vắng có phép · V: vắng · ?: chờ giảng viên duyệt"
-SUMMARY_HEAD = ("STT", "MSSV", "Họ và tên", "Có mặt", "Có phép", "Vắng", "Chờ duyệt", "Số buổi", "Tỉ lệ có mặt", "Ghi chú")
+SUMMARY_HEAD = ("STT", "MSSV", "Họ và tên", "Có mặt", "Có phép", "Vắng", "Chờ duyệt", "Số buổi", "Tỉ lệ có mặt",
+                "Điểm CC", "Ghi chú")
 
 
 @dataclass
@@ -32,12 +33,18 @@ class ReportData:
     marks: dict[tuple[int, int], str]   # (student_id, session_id) -> status
     warn_absent: int
     now: datetime
+    ban_pct: float = 20
 
     def rate(self, r: dict) -> float | None:
         return r["co_mat"] / r["so_buoi"] if r["so_buoi"] else None
 
     def note(self, r: dict) -> str:
+        if r.get("cam_thi"):
+            return f"Không đủ điều kiện dự thi (vắng {r['vang']} buổi)"
         return f"Cảnh báo: vắng {r['vang']} buổi" if r["warn"] else ""
+
+    def flagged(self, r: dict) -> bool:
+        return bool(r["warn"] or r.get("cam_thi"))
 
     @property
     def stamp(self) -> str:
@@ -101,19 +108,21 @@ def to_xlsx(d: ReportData) -> bytes:
     for i, r in enumerate(d.rows, start=1):
         rate = d.rate(r)
         values = [i, r["student_code"], r["full_name"], r["co_mat"], r["vang_co_phep"], r["vang"], r["chua_duyet"],
-                  r["so_buoi"], rate, d.note(r)]
+                  r["so_buoi"], rate, r.get("diem"), d.note(r)]
         for col, v in enumerate(values, start=1):
             c = ws.cell(start + i, col, v)
             c.border = BOX
-            c.alignment = Alignment(horizontal="left" if col in (3, 10) else "center", vertical="center")
-            if r["warn"]:
+            c.alignment = Alignment(horizontal="left" if col in (3, 11) else "center", vertical="center", wrap_text=col == 11)
+            if d.flagged(r):
                 c.fill = WARN_FILL
+        ws.cell(start + i, 10).number_format = "0.0"
         ws.cell(start + i, 9).number_format = "0%"
     end = start + len(d.rows)
     ws.cell(end + 2, 1, f"Ghi chú: sinh viên vắng từ {d.warn_absent} buổi trở lên được tô đỏ. "
-                        "\"Có mặt\" gồm cả các buổi giảng viên duyệt tay.").font = Font(italic=True, size=10)
-    _signature(ws, end + 4, d, 8)
-    for col, width in enumerate((6, 12, 30, 9, 9, 8, 10, 9, 12, 24), start=1):
+                        "\"Có mặt\" gồm cả các buổi giảng viên duyệt tay. Điểm CC thang 10. "
+                        f"Vắng không phép quá {d.ban_pct:g}% số buổi: không đủ điều kiện dự thi.").font = Font(italic=True, size=10)
+    _signature(ws, end + 4, d, 9)
+    for col, width in enumerate((6, 12, 30, 9, 9, 8, 10, 9, 12, 9, 30), start=1):
         ws.column_dimensions[get_column_letter(col)].width = width
     ws.freeze_panes = ws.cell(start + 1, 4)
     ws.page_setup.orientation = "portrait"
@@ -174,24 +183,27 @@ def to_pdf(d: ReportData) -> bytes:
              new_x="LMARGIN", new_y="NEXT")
     pdf.ln(4)
 
-    widths = (9, 20, 50, 13, 13, 11, 14, 13, 14, 23)  # tổng 180 mm
+    widths = (8, 18, 42, 12, 12, 10, 13, 12, 12, 12, 29)  # tổng 180 mm
     head = FontFace(emphasis="BOLD", fill_color=(224, 231, 255))
     pdf.set_font("Inter", "", 8.5)
     with pdf.table(col_widths=widths, headings_style=head, line_height=5.5, text_align=(
-            "CENTER", "CENTER", "LEFT", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "LEFT"),
+            "CENTER", "CENTER", "LEFT", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "LEFT"),
             borders_layout="ALL", repeat_headings=1) as table:
-        table.row(["STT", "MSSV", "Họ và tên", "Có mặt", "Có phép", "Vắng", "Chờ duyệt", "Số buổi", "Tỉ lệ", "Ghi chú"])
+        table.row(["STT", "MSSV", "Họ và tên", "Có mặt", "Có phép", "Vắng", "Chờ duyệt", "Số buổi", "Tỉ lệ", "Điểm CC",
+                   "Ghi chú"])
         for i, r in enumerate(d.rows, start=1):
             rate = d.rate(r)
-            style = FontFace(fill_color=(255, 228, 230)) if r["warn"] else None
+            style = FontFace(fill_color=(255, 228, 230)) if d.flagged(r) else None
             table.row([str(i), r["student_code"] or "", r["full_name"], str(r["co_mat"]), str(r["vang_co_phep"]),
                        str(r["vang"]), str(r["chua_duyet"]), str(r["so_buoi"]),
-                       "–" if rate is None else f"{round(rate * 100)}%", d.note(r)], style=style)
+                       "–" if rate is None else f"{round(rate * 100)}%",
+                       "–" if r.get("diem") is None else f"{r['diem']:.1f}".replace(".", ","), d.note(r)], style=style)
 
     pdf.ln(3)
     pdf.set_font("Inter", "", 8)
     pdf.multi_cell(0, 4.5, f"Ghi chú: sinh viên vắng từ {d.warn_absent} buổi trở lên được tô đỏ. \"Có mặt\" gồm cả các "
-                           "buổi giảng viên duyệt tay. Chi tiết từng buổi xem trong file Excel.")
+                           f"buổi giảng viên duyệt tay. Điểm CC thang 10. Vắng không phép quá {d.ban_pct:g}% số buổi: "
+                           "không đủ điều kiện dự thi. Chi tiết từng buổi xem trong file Excel.")
     if pdf.get_y() > 230:
         pdf.add_page()
     pdf.ln(6)
@@ -204,4 +216,107 @@ def to_pdf(d: ReportData) -> bytes:
     pdf.set_x(x)
     pdf.set_font("Inter", "B", 10)
     pdf.cell(85, 6, d.cls["lecturer_name"], align="C")
+    return bytes(pdf.output())
+
+
+# ---------------------------------------------------------------- Danh sách cấm thi
+
+@dataclass
+class BannedData:
+    school: str
+    faculty: str
+    semester: str
+    ban_pct: float
+    rows: list[dict]   # class_code, class_name, lecturer_name, student_code, full_name, vang, so_buoi, pct
+    now: datetime
+
+    @property
+    def stamp(self) -> str:
+        t = self.now.astimezone(VN)
+        return f"Ngày {t.day:02d} tháng {t.month:02d} năm {t.year}"
+
+
+BANNED_HEAD = ("STT", "Mã lớp", "Tên lớp", "MSSV", "Họ và tên", "Số buổi", "Vắng không phép", "Tỉ lệ vắng")
+BANNED_TITLE = "DANH SÁCH SINH VIÊN KHÔNG ĐỦ ĐIỀU KIỆN DỰ THI"
+
+
+def banned_xlsx(d: BannedData) -> bytes:
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Cấm thi"
+    lines = [(d.school, Font(bold=True, size=12)), (d.faculty, Font(bold=True, size=12)), ("", None),
+             (BANNED_TITLE, Font(bold=True, size=14)),
+             (f"Học kỳ: {d.semester}   ·   Tiêu chí: vắng không phép quá {d.ban_pct:g}% số buổi", Font(size=11))]
+    for i, (text, font) in enumerate(lines, start=1):
+        ws.merge_cells(start_row=i, start_column=1, end_row=i, end_column=len(BANNED_HEAD))
+        cell = ws.cell(i, 1, text)
+        if font:
+            cell.font = font
+        cell.alignment = Alignment(horizontal="center" if i >= 4 else "left")
+    start = len(lines) + 2
+    _header(ws, start, list(BANNED_HEAD))
+    for i, r in enumerate(d.rows, start=1):
+        values = [i, r["class_code"], r["class_name"], r["student_code"], r["full_name"], r["so_buoi"], r["vang"],
+                  r["pct"] / 100]
+        for col, v in enumerate(values, start=1):
+            c = ws.cell(start + i, col, v)
+            c.border = BOX
+            c.alignment = Alignment(horizontal="left" if col in (3, 5) else "center")
+        ws.cell(start + i, 8).number_format = "0%"
+    if not d.rows:
+        ws.cell(start + 1, 1, "Không có sinh viên nào.").font = Font(italic=True)
+    end = start + max(len(d.rows), 1)
+    for k, (text, font) in enumerate(((d.stamp, None), ("Trưởng khoa", Font(bold=True)),
+                                      ("(Ký, ghi rõ họ tên)", Font(italic=True, size=10)))):
+        c = ws.cell(end + 3 + k, 6, text)
+        c.alignment = Alignment(horizontal="center")
+        if font:
+            c.font = font
+    for col, width in enumerate((6, 11, 28, 12, 28, 9, 14, 11), start=1):
+        ws.column_dimensions[get_column_letter(col)].width = width
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+    ws.page_setup.fitToWidth, ws.page_setup.fitToHeight = 1, 0
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+def banned_pdf(d: BannedData) -> bytes:
+    pdf = FPDF(orientation="P", unit="mm", format="A4")
+    pdf.set_margins(15, 15, 15)
+    pdf.set_auto_page_break(True, margin=15)
+    pdf.add_font("Inter", "", str(FONTS / "Inter-Regular.ttf"))
+    pdf.add_font("Inter", "B", str(FONTS / "Inter-Bold.ttf"))
+    pdf.set_title(f"Danh sách cấm thi {d.semester}")
+    pdf.add_page()
+    pdf.set_font("Inter", "B", 10)
+    pdf.cell(0, 5, d.school, new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 5, d.faculty, new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(5)
+    pdf.set_font("Inter", "B", 13)
+    pdf.cell(0, 8, BANNED_TITLE, align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Inter", "", 10)
+    pdf.cell(0, 6, f"Học kỳ: {d.semester}   ·   Tiêu chí: vắng không phép quá {d.ban_pct:g}% số buổi", align="C",
+             new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(4)
+    pdf.set_font("Inter", "", 8.5)
+    if d.rows:
+        with pdf.table(col_widths=(9, 18, 38, 18, 42, 15, 22, 18), line_height=5.5,
+                       headings_style=FontFace(emphasis="BOLD", fill_color=(224, 231, 255)),
+                       text_align=("CENTER", "CENTER", "LEFT", "CENTER", "LEFT", "CENTER", "CENTER", "CENTER"),
+                       repeat_headings=1) as table:
+            table.row(list(BANNED_HEAD))
+            for i, r in enumerate(d.rows, start=1):
+                table.row([str(i), r["class_code"], r["class_name"], r["student_code"] or "", r["full_name"],
+                           str(r["so_buoi"]), str(r["vang"]), f"{r['pct']}%"])
+    else:
+        pdf.cell(0, 8, "Không có sinh viên nào.", align="C", new_x="LMARGIN", new_y="NEXT")
+    if pdf.get_y() > 230:
+        pdf.add_page()
+    pdf.ln(10)
+    for text, style in ((d.stamp, ""), ("Trưởng khoa", "B"), ("(Ký, ghi rõ họ tên)", "")):
+        pdf.set_x(110)
+        pdf.set_font("Inter", style, 10 if style else 9)
+        pdf.cell(85, 6, text, align="C", new_x="LMARGIN", new_y="NEXT")
     return bytes(pdf.output())

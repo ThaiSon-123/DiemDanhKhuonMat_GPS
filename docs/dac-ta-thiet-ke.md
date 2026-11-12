@@ -1,6 +1,7 @@
 # Đặc tả thiết kế: Ứng dụng điểm danh sinh viên bằng nhận diện khuôn mặt và định vị GPS
 
-Nov 10, 2026 · @Thái Sơn · Bản 2 (sửa luồng xử lý, CSDL, API; xem Phụ lục A)
+Nov 10, 2026 · @Thái Sơn · Bản 2 (sửa luồng xử lý, CSDL, API; xem Phụ lục A)  
+Nov 12, 2026 · Bản 3: chức năng mở rộng đã cài đặt (đơn xin nghỉ, khiếu nại, cảnh báo chuyên cần, lịch học, điểm chuyên cần, cấm thi, báo cáo Excel/PDF, tổng quan); xem mục 4.8 và Phụ lục B
 
 ## 1. Tổng quan
 
@@ -12,9 +13,9 @@ Nov 10, 2026 · @Thái Sơn · Bản 2 (sửa luồng xử lý, CSDL, API; xem P
 
 | Vai trò | Việc chính |
 | --- | --- |
-| Sinh viên | Đồng ý xử lý dữ liệu, đăng ký khuôn mặt một lần, điểm danh trong mỗi phiên, xem lịch sử chuyên cần của mình |
-| Giảng viên | Mở và đóng phiên, chiếu mã phòng (khi bật), xem danh sách theo thời gian thực, duyệt lượt đáng ngờ, chỉnh kết quả, duyệt khuôn mặt sinh viên lớp mình |
-| Quản trị viên | Quản lý tài khoản, lớp, danh sách sinh viên (nhập CSV), duyệt khuôn mặt, xóa dữ liệu khuôn mặt theo yêu cầu, xuất báo cáo |
+| Sinh viên | Đồng ý xử lý dữ liệu, đăng ký khuôn mặt một lần, điểm danh trong mỗi phiên, xem lịch sử chuyên cần và lịch học, gửi đơn xin nghỉ / khiếu nại |
+| Giảng viên | Mở và đóng phiên, chiếu mã phòng (khi bật), xem danh sách theo thời gian thực, duyệt lượt đáng ngờ, chỉnh kết quả (từng người hoặc hàng loạt), duyệt đơn và khuôn mặt sinh viên lớp mình, xuất báo cáo lớp |
+| Quản trị viên | Quản lý tài khoản, lớp, lịch học, danh sách sinh viên (nhập CSV), duyệt khuôn mặt, xóa dữ liệu khuôn mặt theo yêu cầu, xem tổng quan, xuất báo cáo và danh sách cấm thi |
 
 **Tiêu chí thành công**
 
@@ -184,20 +185,23 @@ Cột "Endpoint" chỉ ra màn hình gọi API nào (mục 9.3, 9.5), để app 
 
 | Màn hình | Nội dung | Endpoint |
 | --- | --- | --- |
-| Đăng nhập | Email, mật khẩu; báo lỗi sai thông tin hoặc bị khóa tạm | POST /auth/login |
+| Đăng nhập | Tên đăng nhập, mật khẩu; báo lỗi sai thông tin hoặc bị khóa tạm (kèm số lần thử còn lại) | POST /auth/login |
 | Đổi mật khẩu bắt buộc | Hiện khi `must_change_password = true`; không vào được màn khác trước khi đổi | POST /auth/change-password |
+| Tự đổi mật khẩu | Mở từ mục Tài khoản (điện thoại) hoặc menu ⋮ trên thanh bên web; các thiết bị khác bị đăng xuất | POST /auth/change-password |
 
 **Sinh viên (app điện thoại)**
 
 | Màn hình | Nội dung | Endpoint |
 | --- | --- | --- |
-| Trang chủ | Thẻ trạng thái khuôn mặt (chưa đăng ký / chờ duyệt / đã duyệt / bị từ chối); danh sách lớp, lớp nào đang có phiên mở thì có nút "Điểm danh" và đồng hồ đếm ngược | GET /me, GET /me/classes |
+| Trang chủ | Thẻ trạng thái khuôn mặt (chưa đăng ký / chờ duyệt / đã duyệt / bị từ chối); danh sách lớp, lớp nào đang có phiên mở thì có nút "Điểm danh" và đồng hồ đếm ngược; thẻ "Lịch hôm nay" (nút xem cả tuần) | GET /me, GET /me/classes |
+| Thông báo | Nút chuông có chấm đỏ khi cần làm ngay: lớp đang mở điểm danh, sắp đến giờ học (30 phút), khuôn mặt bị từ chối / chờ duyệt, cảnh báo chuyên cần, kết quả đơn, quyết định của giảng viên trong 7 ngày | GET /me, GET /me/classes, GET /me/attendance, GET /me/requests |
 | Đồng ý dữ liệu | Văn bản đồng ý (mục 8), ô đánh dấu, nút đồng ý; hiện trước lần đăng ký đầu và khi có phiên bản mới | POST /me/consent |
-| Đăng ký khuôn mặt | Hướng dẫn; camera có khung oval, chụp lần lượt thẳng, trái, phải; sàng lọc tại chỗ; màn kết quả "đã gửi, chờ duyệt" hoặc lý do từng ảnh không đạt | POST /faces/enroll |
+| Đăng ký khuôn mặt | Hướng dẫn; camera có khung oval, chụp lần lượt thẳng, trái, phải; tự chụp khi 2 khung liên tiếp đạt và đúng hướng (kiểm tra nhanh ở server), vẫn có nút chụp tay; màn kết quả "đã gửi, chờ duyệt" hoặc lý do từng ảnh không đạt | POST /faces/precheck, POST /faces/enroll |
 | Khuôn mặt của tôi | Trạng thái, lý do từ chối, nút đăng ký lại, nút xóa dữ liệu (hộp xác nhận nêu hậu quả) | GET /me, DELETE /me/face |
 | Điểm danh | Một màn theo từng bước: (1) xin thử thách; (2) quét QR hoặc BLE nếu phiên bật; (3) lấy GPS, hiện độ chính xác hiện tại và gợi ý khi chưa đạt; (4) camera với chỉ dẫn hành động ("Quay đầu sang trái") và vòng đếm 60 giây; (5) gửi, chờ, hiện kết quả. Không đạt: hiện lý do, số lượt còn lại, nút thử lại | POST /sessions/{id}/challenge, POST /sessions/{id}/checkin |
-| Lịch sử chuyên cần | Theo lớp: từng buổi và trạng thái; tổng có mặt / vắng | GET /me/attendance |
-| Quyền truy cập | Hiện khi người dùng từ chối quyền camera, vị trí hoặc Bluetooth: giải thích lý do cần, nút mở cài đặt hệ thống | Không |
+| Lịch sử chuyên cần | Theo lớp: từng buổi và trạng thái; tổng có mặt / vắng; thẻ cảnh báo khi vắng nhiều; nút "Xin nghỉ / khiếu nại" ở buổi đang ghi vắng hoặc bị từ chối (mục 4.8), trạng thái đơn dưới mỗi buổi | GET /me/attendance, GET /me/classes, GET /me/requests, POST /me/requests |
+| Quyền truy cập | Hiện khi người dùng từ chối quyền camera, vị trí hoặc Bluetooth: giải thích lý do cần, nút mở cài đặt hệ thống (web: hướng dẫn bật ở biểu tượng ổ khóa) | Không |
+| Tài khoản | Thông tin, đổi mật khẩu, đăng xuất; khuôn mặt của tôi | GET /me |
 
 **Giảng viên (app điện thoại)**
 
@@ -205,9 +209,10 @@ Cột "Endpoint" chỉ ra màn hình gọi API nào (mục 9.3, 9.5), để app 
 | --- | --- | --- |
 | Lớp của tôi | Danh sách lớp; lớp đang có phiên thì vào thẳng màn "Phiên đang chạy" | GET /me/classes |
 | Mở phiên | Chọn thời hạn, r₀, bật mã phòng; thanh trạng thái GPS (số mẫu đạt, độ chính xác); nút mở chỉ bật khi đủ mẫu | POST /sessions |
-| Phiên đang chạy | Bộ đếm có mặt / đáng ngờ / chưa điểm danh; danh sách lọc theo trạng thái, tự làm mới 3-5 giây; dải cảnh báo "tâm có thể lệch" kèm nút tính lại tâm; nút đóng phiên | GET /sessions/{id}/records, POST /sessions/{id}/recenter, POST /sessions/{id}/close |
+| Phiên đang chạy | Bộ đếm có mặt / đáng ngờ / chưa điểm danh; danh sách lọc theo trạng thái, tự làm mới mỗi 4 giây; nhãn "Vắng N buổi" với sinh viên vắng nhiều; dải cảnh báo "tâm có thể lệch" kèm nút tính lại tâm; điểm danh hàng loạt (chọn nhiều → có mặt / có phép / vắng); nút chiếu mã phòng; nút đóng phiên | GET /sessions/{id}/records, PATCH /sessions/{id}/records, POST /sessions/{id}/recenter, POST /sessions/{id}/close |
 | Chi tiết sinh viên trong phiên | Ảnh bằng chứng (nếu có), điểm khuôn mặt, d, r, độ chính xác, cờ, danh sách các lượt; nút đặt trạng thái (có mặt, vắng, vắng có phép, từ chối) kèm ghi chú | GET /attempts/{id}/evidence, PATCH /sessions/{id}/records/{student_id} |
-| Lịch sử phiên | Các phiên đã qua của lớp; mở lại để chỉnh kết quả | GET /classes/{id}/sessions |
+| Lịch sử phiên | Các phiên đã qua của lớp (số buổi, tỉ lệ có mặt trung bình, lượt chờ duyệt); mở lại để chỉnh kết quả; nút sang Báo cáo lớp | GET /classes/{id}/sessions |
+| Đơn của sinh viên | Đơn xin nghỉ và khiếu nại của các lớp mình dạy: lý do, ảnh giấy tờ, trạng thái buổi hiện tại; duyệt hoặc từ chối (bắt buộc lý do) | GET /requests, GET /requests/{id}/attachment, POST /requests/{id}/decide |
 | Duyệt khuôn mặt | Danh sách chờ duyệt của sinh viên lớp mình; xem ảnh cạnh thông tin sinh viên; duyệt hoặc từ chối kèm lý do | GET /faces/pending, GET /faces/{id}/photos, POST /faces/{id}/review |
 
 **Giảng viên (Flutter Web trên laptop)**
@@ -216,19 +221,49 @@ Cột "Endpoint" chỉ ra màn hình gọi API nào (mục 9.3, 9.5), để app 
 | --- | --- | --- |
 | Chiếu mã phòng | Chọn phiên đang mở; QR toàn màn hình, tự đổi mỗi 30 giây, kèm tên lớp và đồng hồ phiên | GET /sessions/{id}/room-token |
 | Gửi mã ESP32 (giai đoạn 2) | Nút kết nối cổng USB (Web Serial), trạng thái thiết bị, mã đang phát | GET /sessions/{id}/room-token |
-| Phiên đang chạy, duyệt khuôn mặt, lịch sử phiên | Giống bản app, bố cục rộng | Như trên |
-| Báo cáo lớp | Bảng sinh viên × số buổi có mặt / vắng / có phép; nút xuất CSV | GET /reports/classes/{id} |
+| Khung web giảng viên | Màn ≥ 900 px có thanh bên: Phiên điểm danh, Chiếu mã phòng (chọn phiên đang mở), Duyệt khuôn mặt, Đơn xin nghỉ / khiếu nại, Báo cáo; trang con giữ bố cục cột | Như trên |
+| Báo cáo lớp | Chỉ số nhanh, biểu đồ tỉ lệ có mặt theo buổi, bảng sinh viên × có mặt / có phép / vắng / chờ duyệt / điểm chuyên cần / tỉ lệ, nhãn cấm thi; xuất Excel, PDF nộp khoa, CSV | GET /reports/classes/{id} |
 
 **Quản trị viên (Flutter Web)**
 
 | Màn hình | Nội dung | Endpoint |
 | --- | --- | --- |
 | Người dùng | Tìm kiếm, lọc theo vai trò; tạo, sửa, đặt lại mật khẩu, vô hiệu hóa, xóa dữ liệu khuôn mặt | /admin/users, DELETE /admin/users/{id}/face |
-| Lớp | Danh sách lớp theo học kỳ; sửa giảng viên phụ trách; danh sách sinh viên của lớp, thêm / bớt | /admin/classes, /admin/enrollments |
+| Tổng quan | Theo học kỳ: tỉ lệ có mặt, số buổi, sinh viên vắng nhiều, đơn đang chờ, tỉ lệ lượt đạt; tỉ lệ có mặt theo lớp; cờ đáng ngờ theo loại; lý do lượt không đạt. Trang mặc định khi đăng nhập | GET /admin/overview |
+| Lớp | Danh sách lớp theo học kỳ; sửa giảng viên phụ trách; lịch học hằng tuần (thứ, giờ, phòng); danh sách sinh viên của lớp, thêm / bớt | /admin/classes, /admin/classes/{id}/schedules, /admin/enrollments |
 | Nhập CSV | Chọn loại file, tải lên, xem trước kết quả kiểm tra từng dòng, xác nhận nhập | POST /admin/import |
 | Duyệt khuôn mặt | Như giảng viên nhưng thấy mọi sinh viên | Như trên |
-| Báo cáo | Chọn lớp, xem và xuất CSV | GET /reports/classes/{id} |
+| Báo cáo | Chọn lớp, xem và xuất Excel / PDF / CSV | GET /reports/classes/{id} |
+| Cấm thi | Sinh viên không đủ điều kiện dự thi theo học kỳ, nhóm theo lớp; xuất PDF (chỗ ký trưởng khoa) / Excel | GET /admin/banned |
 | Nhật ký | Lọc theo người thực hiện, hành động, thời gian | GET /admin/audit-log |
+
+### 4.8 Chức năng mở rộng (bản 3)
+
+**Đơn xin nghỉ và khiếu nại.** Sinh viên gửi cho một buổi **đã đóng** mà mình đang bị ghi "vắng" hoặc "bị từ chối", trong vòng `attendance.request_days` (14) ngày sau buổi học. Đơn gồm loại (`leave` xin nghỉ có phép, `appeal` khiếu nại kết quả), lý do (5–1000 ký tự) và ảnh giấy tờ tùy chọn (JPEG / PNG ≤ 5 MB, mã hóa như ảnh khác). Mỗi (buổi, sinh viên) chỉ có một đơn đang chờ. Giảng viên lớp đó duyệt: đơn xin nghỉ → `excused`, khiếu nại → `manual_present`; kết quả bị khóa như duyệt tay (`decided_by`), ghi nhật ký trước / sau. Từ chối bắt buộc ghi lý do; sinh viên thấy lý do và gửi được đơn khác. Xem ảnh giấy tờ được ghi nhật ký.
+
+**Cảnh báo chuyên cần.** Sinh viên vắng (kể cả bị từ chối) từ `attendance.warn_absent` (3) buổi **đã đóng** trở lên ở một lớp thì: sinh viên thấy thẻ đỏ ở Lịch sử và thông báo; giảng viên thấy nhãn "Vắng N buổi" ở Phiên đang chạy; báo cáo tô đỏ dòng đó.
+
+**Điểm chuyên cần và điều kiện dự thi.** Với mỗi sinh viên trong lớp:
+
+- Điểm chuyên cần = `grading.scale` (10) × (số buổi có mặt + số buổi vắng có phép nếu `grading.excused_as_present`) / số buổi, làm tròn 0,1.
+- Không đủ điều kiện dự thi khi số buổi vắng không phép (`absent` + `rejected`) / số buổi > `grading.ban_absent_pct` (20 %).
+- "Có mặt" gồm `present` và `manual_present`; lượt `suspicious` chưa duyệt không tính có mặt.
+
+**Báo cáo nộp khoa.** `GET /reports/classes/{id}?format=xlsx` gồm sheet *Tổng hợp* (tiêu đề trường / khoa trong `report:` của cấu hình, thông tin lớp, bảng có điểm chuyên cần, ghi chú cảnh báo / cấm thi, chỗ ký giảng viên) và sheet *Chi tiết buổi* (ma trận sinh viên × buổi, ký hiệu C / P / V / ?). `?format=pdf` là bản A4 của sheet Tổng hợp, dùng font Inter (giấy phép OFL) để hiển thị đúng tiếng Việt. Danh sách cấm thi toàn học kỳ: `GET /admin/banned` (JSON / xlsx / pdf, chỗ ký trưởng khoa).
+
+**Lịch học và nhắc giờ.** Quản trị viên nhập lịch hằng tuần của lớp (thứ 1–7 theo ISO, giờ bắt đầu, giờ kết thúc, phòng). Sinh viên thấy "Lịch hôm nay" và lịch cả tuần; khi một buổi bắt đầu trong 30 phút tới mà lớp chưa mở phiên thì có thông báo "Sắp đến giờ học" trong app. Thông báo đẩy khi app đóng chưa làm (cần Firebase).
+
+**Điểm danh hàng loạt.** Giảng viên chọn nhiều sinh viên trong phiên (kể cả phiên đã đóng) và đặt cùng một trạng thái tay (`manual_present`, `excused`, `absent`, `rejected`) kèm ghi chú, cho trường hợp mất mạng hoặc GPS phòng hỏng. Mỗi dòng được khóa và ghi nhật ký riêng.
+
+**Tự chụp khi đăng ký khuôn mặt.** App gửi một khung khoảng 0,7 giây một lần lên `POST /faces/precheck`; server chỉ phát hiện mặt, đo độ sáng, độ nét và hướng mặt (không trích đặc trưng, không chống giả mạo, không lưu ảnh). Khi 2 khung liên tiếp đạt và đúng hướng của bước (thẳng / trái / phải), app giữ khung đó. Ảnh vẫn được kiểm tra đầy đủ khi gửi `POST /faces/enroll`.
+
+**Thông báo trong app.** Dựng từ dữ liệu sẵn có (không có bảng thông báo riêng): phiên đang mở mà mình chưa điểm danh, sắp đến giờ học, trạng thái khuôn mặt, cảnh báo chuyên cần, kết quả đơn và quyết định của giảng viên trong 7 ngày.
+
+**Tổng quan cho quản trị viên.** Theo học kỳ: tỉ lệ có mặt toàn khoa và từng lớp, số sinh viên vắng nhiều, số đơn đang chờ, tỉ lệ lượt đạt, số lượt theo từng cờ đáng ngờ và theo lý do không đạt.
+
+**Dọn dữ liệu hằng ngày.** `python -m app.jobs.cleanup` (cron trên VPS): xóa ảnh bằng chứng quá hạn (đặt `evidence_path = NULL`), ảnh đăng ký còn sót của mẫu đã duyệt / từ chối / thu hồi, thử thách cũ hơn 1 ngày không có lượt thử. File đã mất không gây lỗi.
+
+**Tài khoản.** Quản trị viên không tự đặt lại mật khẩu của chính mình (tránh tự khóa mình); quên mật khẩu thì chạy `python -m app.cli reset-password --username <tên>` trên server (in mật khẩu tạm, ghi nhật ký `user.reset_password.cli`).
 
 ## 5. Nhận diện khuôn mặt và chống giả mạo
 
@@ -392,6 +427,9 @@ erDiagram
   attendance_sessions ||--o{ attendance_records : ""
   checkin_attempts |o--o| attendance_records : "lượt tốt nhất"
   users ||--o{ audit_log : ""
+  attendance_sessions ||--o{ requests : "đơn"
+  users ||--o{ requests : "gửi"
+  classes ||--o{ class_schedules : "lịch"
 ```
 
 ### 9.2 Định nghĩa bảng
@@ -534,6 +572,34 @@ CREATE TABLE audit_log (
 );
 CREATE INDEX ON audit_log(target);
 CREATE INDEX ON audit_log(created_at);
+
+-- Bản 3 (migration 0003): đơn xin nghỉ / khiếu nại cho một buổi đã đóng
+CREATE TABLE requests (
+  id              bigserial PRIMARY KEY,
+  kind            text NOT NULL CHECK (kind IN ('leave', 'appeal')),
+  session_id      bigint NOT NULL REFERENCES attendance_sessions(id),
+  student_id      bigint NOT NULL REFERENCES users(id),
+  reason          text NOT NULL,
+  attachment_path text,                          -- ảnh giấy tờ, mã hóa AES-GCM
+  status          text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  decided_by      bigint REFERENCES users(id),
+  decided_at      timestamptz,
+  decision_note   text,
+  created_at      timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX one_pending_request ON requests(session_id, student_id) WHERE status = 'pending';
+CREATE INDEX ON requests(student_id);
+
+-- Bản 3 (migration 0004): lịch học hằng tuần của lớp
+CREATE TABLE class_schedules (
+  id         bigserial PRIMARY KEY,
+  class_id   bigint NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  weekday    smallint NOT NULL CHECK (weekday BETWEEN 1 AND 7),   -- 1 = Thứ Hai … 7 = Chủ nhật
+  start_time time NOT NULL,
+  end_time   time NOT NULL CHECK (end_time > start_time),
+  room       text
+);
+CREATE INDEX ON class_schedules(class_id);
 ```
 
 **Token.** Access token và refresh token đều là JWT không lưu trong CSDL. Refresh token mang `token_version` của người dùng; server từ chối nếu khác `users.token_version` hoặc `is_active = false`. Cách này đủ để thu hồi token khi đổi mật khẩu hay vô hiệu hóa tài khoản mà không cần bảng token riêng.
@@ -624,27 +690,58 @@ RETURNING id, action;   -- không trả dòng nào = nonce không hợp lệ
 | GET /classes/{id}/sessions | Giảng viên | Các phiên của lớp (lịch sử) kèm số có mặt / vắng |
 | GET /attempts/{id}/evidence | Giảng viên | Ảnh bằng chứng của lượt đáng ngờ (ghi nhật ký) |
 | PATCH /sessions/{id}/records/{student_id} | Giảng viên | Đặt trạng thái tay kèm ghi chú (ghi nhật ký trước/sau) |
-| GET /reports/classes/{id} | Giảng viên, quản trị viên | Báo cáo chuyên cần theo lớp; `?format=csv` để xuất |
+| GET /reports/classes/{id} | Giảng viên, quản trị viên | Báo cáo chuyên cần theo lớp; `?format=csv|xlsx|pdf` để xuất |
 | POST /admin/import | Quản trị viên | Nhập CSV người dùng, lớp, danh sách lớp |
 | CRUD /admin/users, /admin/classes, /admin/enrollments | Quản trị viên | Quản lý thông thường; đặt lại mật khẩu, vô hiệu hóa tài khoản |
 | DELETE /admin/users/{id}/face | Quản trị viên | Xóa dữ liệu khuôn mặt theo yêu cầu |
 | GET /admin/audit-log | Quản trị viên | Xem nhật ký, lọc theo người thực hiện, hành động, thời gian |
+| POST /faces/precheck | Sinh viên | Kiểm tra nhanh một khung (chất lượng, hướng mặt) để tự chụp; không lưu ảnh |
+| GET /sessions/{id}/records/{student_id} | Giảng viên | Kết quả và mọi lượt của một sinh viên trong phiên |
+| PATCH /sessions/{id}/records | Giảng viên | Điểm danh hàng loạt: `{student_ids, status, note}` |
+| POST /me/requests, GET /me/requests | Sinh viên | Gửi đơn xin nghỉ / khiếu nại (multipart: `kind`, `session_id`, `reason`, `attachment`), xem đơn của mình |
+| GET /requests | Giảng viên | Đơn của các lớp mình dạy (`?status=pending\|all`) |
+| GET /requests/{id}/attachment | Giảng viên | Ảnh giấy tờ (ghi nhật ký) |
+| POST /requests/{id}/decide | Giảng viên | `{decision: approve\|reject, note}`; duyệt thì cập nhật kết quả buổi |
+| GET/POST /admin/classes/{id}/schedules, DELETE /admin/schedules/{id} | Quản trị viên | Lịch học hằng tuần của lớp |
+| GET /admin/overview | Quản trị viên | Tổng quan theo học kỳ |
+| GET /admin/banned | Quản trị viên | Danh sách không đủ điều kiện dự thi (`?format=json\|xlsx\|pdf`) |
 
 Mọi endpoint của giảng viên kiểm tra giảng viên đó dạy lớp của phiên; mọi endpoint của sinh viên kiểm tra sinh viên thuộc lớp.
 
 ### 9.4 Cấu hình server
 
+Toàn bộ tham số nghiệp vụ nằm trong `backend/config.yaml` (bí mật như `DATABASE_URL`, `JWT_SECRET`, `DATA_KEY` nằm trong biến môi trường / `.env`). Khi thử trên máy dev đặt `CONFIG_FILE=config.dev.yaml` (giống hệt, chỉ nới ngưỡng GPS và dùng khuôn viên phủ cả nước; không dùng trên server thật).
+
 ```yaml
+# Đặc tả mục 9.4 + Global Constraints trong docs/plan.md. Ngưỡng mô hình chốt ở Task 11.
+auth:
+  access_minutes: 15
+  refresh_days: 7
+  max_failures: 10    # sai 10 lần / 15 phút cùng email thì khóa 15 phút
+  lock_minutes: 15
+consent:
+  current_version: v1   # đổi khi sửa văn bản đồng ý; sinh viên phải đồng ý lại
 face:
-  model_name: arcface_r50_onnx_v1   # chốt sau thí nghiệm mục 10
-  accept_threshold: 0.0              # điền từ ROC
-  suspect_threshold: 0.0
-  antispoof_threshold: 0.0
+  model_name: arcface_r50_onnx_v1
+  embed_file: w600k_r50.onnx   # file trong backend/models/ (xem models/README.md)
+  threads: 2
+  accept_threshold: 0.5    # tạm theo experiments/spike.md (cùng người 0,91–0,98; khác người 0,03); chốt ở Task 11
+  suspect_threshold: 0.4   # dưới mức này là không khớp; giữa 0,4 và 0,5 là sát ngưỡng
+  antispoof_threshold: 0.8   # tạm theo experiments/spike.md (thật ≥ 0,95; video ≤ 0,68); chốt ở Task 11
+  yaw_sign: 1            # chốt ở Task 0 trên ảnh điện thoại thật
+  yaw_threshold: 0.25
+  min_brightness: 60
+  min_sharpness: 50
+  min_face_px: 100
+  actions: [turn_left, turn_right]
 gps:
   default_r0_m: 20
   r0_range_m: [10, 50]
   max_acc_lecturer_m: 20
   max_acc_student_m: 30
+  min_samples_lecturer: 5
+  min_samples_student: 3
+  max_span_s: 20
   max_speed_mps: 30
 session:
   default_duration_min: 10
@@ -653,6 +750,17 @@ session:
   room_token_window_s: 30
 retention:
   evidence_days: 30
+attendance:
+  warn_absent: 3        # vắng từ 3 buổi trở lên thì cảnh báo sinh viên và giảng viên
+  request_days: 14      # hạn gửi đơn xin nghỉ / khiếu nại sau buổi học
+  attachment_max_mb: 5
+report:                 # tiêu đề báo cáo Excel / PDF nộp khoa: sửa theo trường của bạn
+  school: TRƯỜNG ĐẠI HỌC
+  faculty: KHOA CÔNG NGHỆ THÔNG TIN
+grading:
+  scale: 10                  # điểm chuyên cần = 10 × (có mặt + có phép) / số buổi
+  excused_as_present: true   # buổi vắng có phép tính như có mặt
+  ban_absent_pct: 20         # vắng không phép quá 20% số buổi thì cấm thi
 campus_polygon_file: campus.geojson
 ```
 
@@ -837,8 +945,30 @@ campus_polygon_file: campus.geojson
 `GET /me/attendance`
 
 ```json
-[ { "session_id": 41, "class_code": "IT4060", "opened_at": "...", "status": "present" } ]
+[ { "session_id": 41, "class_id": 3, "class_code": "IT4060", "class_name": "Học máy", "opened_at": "...",
+    "status": "present", "checked_at": "...", "is_open": false } ]
 ```
+
+`GET /me/classes` (sinh viên) mỗi lớp có thêm `absences`, `warn`, `warn_absent` và `schedules`:
+
+```json
+{ "id": 3, "code": "IT4060", "name": "Học máy", "open_session": null, "absences": 3, "warn": true, "warn_absent": 3,
+  "schedules": [ { "weekday": 2, "start": "07:00", "end": "09:30", "room": "D9-301" } ] }
+```
+
+`GET /reports/classes/{id}`: mỗi dòng `rows[]` có thêm `warn`, `diem` (điểm chuyên cần), `cam_thi`; kèm `warn_absent`, `grading`, `sessions` (từng buổi: có mặt / chờ duyệt / tổng), `first_try_pct`. `?format=xlsx` / `?format=pdf` trả file đính kèm `bao-cao-chuyen-can-{mã lớp}-{học kỳ}.{xlsx|pdf}`.
+
+`GET /requests` (giảng viên)
+
+```json
+[ { "id": 5, "kind": "leave", "session_id": 41, "reason": "Em bị sốt, có giấy khám", "status": "pending",
+    "has_attachment": true, "opened_at": "...", "class_code": "IT4060", "student_id": 12, "full_name": "Lê Thu Hà",
+    "student_code": "SV014", "record_status": "absent", "decision_note": null } ]
+```
+
+`POST /faces/precheck` trả `{ "ok": true, "reason": null, "pose": "front" | "left" | "right" | "turning" }`.
+
+Mã lỗi mới: `SESSION_STILL_OPEN`, `REQUEST_TOO_LATE`, `REQUEST_NOT_ALLOWED`, `REQUEST_PENDING_EXISTS`, `REQUEST_DECIDED` (409).
 
 **Định dạng file nhập CSV** (`POST /admin/import`, multipart: `type` và `file`). Server kiểm tra toàn bộ file trước; có dòng lỗi thì không nhập dòng nào và trả danh sách lỗi theo số dòng. Gửi kèm `dry_run=true` để chỉ kiểm tra (dùng cho màn xem trước).
 
@@ -922,7 +1052,8 @@ Thời gian từng giai đoạn chưa định vì chưa biết hạn nộp; cầ
 - ESP32 phát BLE cắm vào laptop giảng viên (mục 7.2).
 - Beacon Bluetooth hoặc thẻ NFC gắn cố định ở từng phòng.
 - Chuyển phần sàng lọc sang chạy trên điện thoại (TFLite) để giảm tải server.
-- Trạng thái đi muộn tự động, thông báo đẩy.
+- Trạng thái đi muộn tự động; thông báo đẩy (Firebase) cho nhắc giờ và phiên mới mở (hiện chỉ có thông báo trong app).
+- Nhập thời khóa biểu từ CSV, phát hiện buổi giảng viên quên mở phiên.
 - Tích hợp hệ thống quản lý đào tạo của trường.
 - Mở rộng lên toàn trường, tách dịch vụ nhận diện chạy trên GPU khi cần.
 
@@ -947,3 +1078,19 @@ Thời gian từng giai đoạn chưa định vì chưa biết hạn nộp; cầ
 | 9.2 | `INSERT ... ON CONFLICT` khi cập nhật kết quả; `users.token_version`; thêm index; câu SQL tạo dòng vắng và báo cáo | Sinh viên vào lớp sau khi mở phiên bị mất lượt; cần thu hồi refresh token |
 | 4.7 | Danh sách màn hình theo vai trò, kèm endpoint mỗi màn gọi | App và backend làm song song được |
 | 9.5 | Quy ước API, định dạng lỗi, mã lỗi, mã lý do, mã cờ, request/response mẫu, định dạng CSV | Thống nhất hợp đồng giữa app và backend |
+
+## Phụ lục B. Thay đổi ở bản 3 (chức năng mở rộng đã cài đặt)
+
+| Mục | Thay đổi | Lý do |
+| --- | --- | --- |
+| 4.7, 9.5 | Đăng nhập bằng tên đăng nhập (`username`), email tùy chọn | Nhiều sinh viên chưa có email trường |
+| 4.8, 9.2 | Bảng `requests`: đơn xin nghỉ và khiếu nại, giảng viên duyệt | Giảng viên không phải đặt tay từng trường hợp; sinh viên có kênh phản hồi khi bị ghi vắng nhầm |
+| 4.8 | Cảnh báo chuyên cần (`attendance.warn_absent`) | Nhắc sớm sinh viên trước khi bị cấm thi |
+| 4.8 | Điểm chuyên cần và danh sách cấm thi (`grading`) | Khoa cần số liệu để nộp, không phải tính tay |
+| 4.8, 9.5 | Báo cáo Excel (tổng hợp + chi tiết buổi) và PDF A4 có chỗ ký | CSV chưa đủ định dạng để nộp khoa |
+| 4.8, 9.2 | Bảng `class_schedules`, lịch hôm nay, nhắc giờ trong app | Sinh viên biết giờ, phòng; chuẩn bị Wi-Fi, vị trí trước khi điểm danh |
+| 4.8 | Điểm danh hàng loạt | Phòng mất mạng hoặc GPS hỏng thì giảng viên xử lý nhanh |
+| 4.8 | Tự chụp khi đăng ký qua `/faces/precheck` | Không có ML Kit trên web; dùng engine sẵn có ở server |
+| 4.7 | Thông báo, tự đổi mật khẩu, khung web có thanh bên cho giảng viên, trang Tổng quan cho quản trị viên | Hoàn thiện trải nghiệm từng vai trò |
+| 4.8 | Tác vụ dọn dữ liệu hằng ngày; lệnh `reset-password`; chặn quản trị viên tự đặt lại mật khẩu | Tuân thủ thời hạn lưu; tránh tự khóa tài khoản quản trị |
+| 9.4 | `config.dev.yaml` cho máy dev | PC định vị qua Wi-Fi sai hàng trăm mét, chưa có đa giác khuôn viên thật |

@@ -6,6 +6,7 @@ import '../../core/session.dart';
 import '../../ui/neo.dart';
 import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
+import '../schedule.dart';
 import 'lecturer_nav.dart';
 
 /// Artboard "GV · Lớp của tôi" (GV_LopCuaToi.dc.html). Dữ liệu: GET /me/classes.
@@ -158,6 +159,14 @@ class _ClassCard extends StatelessWidget {
           ]),
           const SizedBox(height: 4),
           Text('${c['name']}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.text)),
+          if (scheduleSummary(c).isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Row(children: [
+              const Icon(Icons.event, size: 14, color: AppColors.textMuted),
+              const SizedBox(width: 4),
+              Expanded(child: Text(scheduleSummary(c), style: const TextStyle(fontSize: 12, color: AppColors.textMuted))),
+            ]),
+          ],
           const SizedBox(height: 12),
           Row(children: [
             Expanded(

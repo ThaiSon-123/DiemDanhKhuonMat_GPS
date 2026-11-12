@@ -52,6 +52,11 @@ ABSENCES_SQL = """(SELECT count(*) FROM attendance_records ar JOIN attendance_se
   WHERE x.class_id = c.id AND ar.student_id = {student} AND ar.status IN ('absent', 'rejected')
   AND (x.closed_at IS NOT NULL OR x.expires_at <= now()))"""
 
+# Lịch học hằng tuần của lớp c (thứ 1–7, giờ "HH:MM", phòng), sắp theo thứ rồi giờ.
+_SCHEDULES = """(SELECT coalesce(json_agg(json_build_object('weekday', x.weekday, 'start', to_char(x.start_time, 'HH24:MI'),
+  'end', to_char(x.end_time, 'HH24:MI'), 'room', x.room) ORDER BY x.weekday, x.start_time), '[]')
+  FROM class_schedules x WHERE x.class_id = c.id) AS schedules"""
+
 _OPEN_SESSION = """(SELECT json_build_object('id', s.id, 'expires_at', s.expires_at, 'room_check', s.room_check)
   FROM attendance_sessions s
   WHERE s.class_id = c.id AND s.closed_at IS NULL AND s.expires_at > now()) AS open_session"""
@@ -61,7 +66,7 @@ _OPEN_SESSION = """(SELECT json_build_object('id', s.id, 'expires_at', s.expires
 def my_classes(user: dict = Depends(require_role("student", "lecturer")),
                conn: psycopg.Connection = Depends(get_conn)):
     if user["role"] == "student":
-        sql = (f"SELECT c.id, c.code, c.name, c.semester, l.full_name AS lecturer_name, {_OPEN_SESSION}, "
+        sql = (f"SELECT c.id, c.code, c.name, c.semester, l.full_name AS lecturer_name, {_OPEN_SESSION}, {_SCHEDULES}, "
                f"{ABSENCES_SQL.format(student='e.student_id')} AS absences "
                "FROM enrollments e JOIN classes c ON c.id = e.class_id JOIN users l ON l.id = c.lecturer_id "
                "WHERE e.student_id = %s")
@@ -69,7 +74,7 @@ def my_classes(user: dict = Depends(require_role("student", "lecturer")),
         limit = get_settings().attendance.warn_absent
         return [{**r, "warn": r["absences"] >= limit, "warn_absent": limit} for r in rows]
     sql = (f"SELECT c.id, c.code, c.name, c.semester, "
-           f"(SELECT count(*) FROM enrollments e WHERE e.class_id = c.id) AS student_count, {_OPEN_SESSION} "
+           f"(SELECT count(*) FROM enrollments e WHERE e.class_id = c.id) AS student_count, {_OPEN_SESSION}, {_SCHEDULES} "
            "FROM classes c WHERE c.lecturer_id = %s")
     return conn.execute(sql + " ORDER BY c.semester DESC, c.code", (user["id"],)).fetchall()
 

@@ -43,4 +43,8 @@ attendance:
 report:                 # tiêu đề báo cáo Excel / PDF nộp khoa: sửa theo trường của bạn
   school: TRƯỜNG ĐẠI HỌC
   faculty: KHOA CÔNG NGHỆ THÔNG TIN
+grading:
+  scale: 10                  # điểm chuyên cần = 10 × (có mặt + có phép) / số buổi
+  excused_as_present: true   # buổi vắng có phép tính như có mặt
+  ban_absent_pct: 20         # vắng không phép quá 20% số buổi thì cấm thi
 campus_polygon_file: campus.dev.geojson

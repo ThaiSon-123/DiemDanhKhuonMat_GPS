@@ -8,7 +8,27 @@
 
 **Tech Stack:** Python 3.12, FastAPI, psycopg[binary,pool] 3, Alembic, PyJWT, argon2-cffi, cryptography (AES-GCM), onnxruntime, opencv-python-headless (YuNet), numpy, pytest + httpx + pgserver (Postgres nhúng để test); Flutter 3 (dio, go_router, flutter_secure_storage, camera, geolocator, mobile_scanner, uuid); PostgreSQL 16; Docker Compose + Caddy để triển khai.
 
-**Spec:** `dac-ta-thiet-ke.md` (bản 2). Đọc cùng plan này; mọi "mục X" bên dưới là mục của đặc tả.
+**Spec:** `dac-ta-thiet-ke.md` (bản 3; chức năng mở rộng ở mục 4.8). Đọc cùng plan này; mọi "mục X" bên dưới là mục của đặc tả.
+
+## Tiến độ (cập nhật 12/11/2026)
+
+| Task | Nội dung | Trạng thái | Commit |
+| --- | --- | --- | --- |
+| T0 | Spike mô hình (YuNet, ArcFace R50, MiniFASNetV2) | Xong; ngưỡng tạm trong `config.yaml` | `f79fe6f` |
+| T1–T2 | Khung backend, CSDL, xác thực, phân quyền | Xong | `e15cd6d`, `c59a755` |
+| T3–T4 | Quản trị (người dùng, lớp, CSV, nhật ký), `/me` | Xong; đăng nhập bằng `username` (migration 0002) | `bc49b88`, `5472005` |
+| T5 | Khung app Flutter + giao diện theo canvas | Xong | `cbbcfdb`, `bbe64bc`, `228befa` |
+| T6–T9 | Mã hóa, kiểm tra khuôn mặt, engine ONNX, API khuôn mặt | Xong | `cffa70a`, `9480fb3`, `1737855` |
+| T10 | Màn đăng ký và duyệt khuôn mặt | Xong; thêm tự chụp ở T23 | `41df5d2` |
+| **T11** | **Thí nghiệm chọn mô hình và ngưỡng (cổng giai đoạn 2)** | **Chưa làm: cần dữ liệu tình nguyện viên** | |
+| T12–T15 | Vị trí, mã phòng, phiên, điểm danh 6 bước | Xong | `cffa70a`, `14a2033`, `e551092` |
+| T16 | Theo dõi, duyệt tay, tính lại tâm, bằng chứng, báo cáo | Xong | `92e1c17` |
+| T17 | Dọn dữ liệu (`python -m app.jobs.cleanup`) | Xong | `340a187` |
+| T18–T19 | Luồng điểm danh, màn giảng viên và quản trị | Xong | `92e1c17`, `340a187` |
+| **T20** | **Triển khai VPS, đo GPS, kiểm thử tải, chạy thử thật** | **Chưa làm** | |
+| T21–T26 | Chức năng mở rộng (bên dưới) | Xong | `3974ca0` → `8b24d23` |
+
+Còn lại: T11 (cần ảnh nhiều người và ảnh giả), T20 (cần VPS, tên miền, điện thoại thật), thử trọn luồng trên Android thật, đa giác khuôn viên thật, artboard canvas cho các màn mở rộng.
 
 ## Global Constraints
 
@@ -794,9 +814,48 @@ testWidgets('admin deactivate asks confirmation', ...);
 - [ ] **Step 5: Chạy thử một lớp thật** (sau khi nhà trường cho phép và sinh viên đã đồng ý): ghi tỉ lệ thành công lần đầu, số lần thử trung bình, tỉ lệ đáng ngờ, phản hồi của giảng viên và sinh viên.
 - [ ] **Step 6: Commit** `chore(deploy): triển khai VPS, đo GPS, kiểm thử tải`
 
+## Giai đoạn 3b — Chức năng mở rộng (đã làm, đặc tả mục 4.8)
+
+### Task 21: Chạy thử trên máy dev không cần Docker, tài khoản quản trị
+
+- Files: `backend/scripts/dev_db.py` (Postgres nhúng pgserver ở `backend/.pgdata`), `backend/scripts/dev_backend.ps1` (`-Docker`, `-Lan`), `backend/config.dev.yaml`, `backend/campus.dev.geojson`, cờ `--dart-define=DEV_GPS=true`, `docs/du-lieu-mau/*.csv`, `docs/huong-dan-chay-thu.md`.
+- `python -m app.cli reset-password --username <tên>`; quản trị viên không tự đặt lại mật khẩu của mình (422).
+- Bố cục web rộng hơn (`webContentMaxWidth`), hộp thoại theo phong cách thiết kế.
+
+### Task 22: Hoàn thiện app
+
+- Tự đổi mật khẩu (mọi vai trò); nút "Mở cài đặt" ở màn Quyền truy cập; thông báo cho sinh viên (`features/student/notices.dart`); khung web giảng viên có thanh bên (`ui/web_shell.dart`, `features/lecturer/lecturer_shell.dart`), màn chọn phiên để chiếu mã.
+- Test: `shell_test.dart`, `notices_test.dart`, `test_cleanup.py`.
+
+### Task 23: Đơn xin nghỉ, khiếu nại, cảnh báo chuyên cần, tự chụp, tổng quan
+
+- Migration `0003_requests`; `app/routers/requests.py` (`/me/requests`, `/requests`, `/requests/{id}/attachment`, `/requests/{id}/decide`).
+- Cảnh báo vắng: `attendance.warn_absent`; `absences`/`warn` ở `/me/classes`, `/sessions/{id}/records`, báo cáo.
+- `POST /faces/precheck` + tự chụp ở `enroll_page.dart`; `GET /admin/overview` + `overview_page.dart`.
+- Test: `test_requests.py`, `requests_test.dart`, test tự chụp trong `enroll_test.dart`.
+
+### Task 24: Báo cáo Excel / PDF nộp khoa
+
+- `app/services/report_export.py` (openpyxl, fpdf2, font Inter trong `app/fonts`); `?format=xlsx|pdf`; tên trường / khoa ở `report:` của cấu hình.
+- App: nút Xuất Excel, PDF nộp khoa, CSV; `downloadBytes` cho web.
+
+### Task 25: Lịch học, điểm danh hàng loạt, điểm chuyên cần, cấm thi
+
+- Migration `0004_schedules`; `GET/POST /admin/classes/{id}/schedules`, `DELETE /admin/schedules/{id}`; `schedules` trong `/me/classes`; `features/schedule.dart` (nhập lịch, lịch hôm nay / cả tuần, nhắc giờ).
+- `PATCH /sessions/{id}/records` (hàng loạt); `grading:` (thang điểm, có phép tính như có mặt, ngưỡng cấm thi 20 %); `GET /admin/banned` (JSON, xlsx, pdf) + `banned_page.dart`.
+- Test: `test_schedule_grading.py`, `extras_test.dart`.
+
+### Task 26 (còn mở): Artboard cho các màn mở rộng
+
+- Thêm lên canvas: Đơn của sinh viên, bảng gửi đơn, Lịch hôm nay / cả tuần, Điểm danh hàng loạt, Tổng quan, Cấm thi. Các màn này đang dựng theo cùng phong cách nhưng chưa có artboard.
+
+---
+
 ### Tùy chọn (sau khi giai đoạn 3 ổn định)
 
 - **ESP32 phát BLE** (mục 7.2 giai đoạn 2): firmware ESP32, màn "Gửi mã ESP32" trên Flutter Web (Web Serial qua JS interop), quét BLE trong app sinh viên. Lập plan riêng khi đến lúc làm.
+- **Thông báo đẩy** (Firebase Cloud Messaging) cho nhắc giờ và phiên mới mở; hiện chỉ có thông báo trong app.
+- **Nhập thời khóa biểu từ CSV**, phát hiện buổi giảng viên quên mở phiên.
 
 ---
 
@@ -809,6 +868,7 @@ T1 → T12, T13 (thuần, làm bất cứ lúc nào sau T1)
 T9 + T12 + T13 → T14 → T15 → T16 → T17
 T5 + T15 → T18 ; T5 + T16 → T19
 T16 + T18 + T19 → T20
+T16 + T19 → T21 → T22 → T23 → T24 → T25 (đã làm) ; T25 → T26
 ```
 
 Lịch theo tuần chưa có vì chưa biết hạn nộp; khi có ngày nộp thì gán tuần cho từng task theo đồ thị trên.

@@ -19,7 +19,7 @@ from fastapi.testclient import TestClient
 from psycopg.rows import dict_row
 
 BACKEND = Path(__file__).resolve().parent.parent
-TABLES = ("users, classes, enrollments, consents, face_templates, attendance_sessions, requests, "
+TABLES = ("users, classes, enrollments, consents, face_templates, attendance_sessions, requests, class_schedules, "
           "challenges, checkin_attempts, attendance_records, audit_log")
 
 

@@ -113,6 +113,31 @@ def patch_record(session_id: int, student_id: int, body: RecordPatch, request: R
     return {"student_id": student_id, **after}
 
 
+class BulkPatch(BaseModel):
+    student_ids: list[int] = Field(min_length=1, max_length=500)
+    status: Literal["manual_present", "absent", "excused", "rejected"]
+    note: str | None = Field(None, max_length=500)
+
+
+@router.patch("/sessions/{session_id}/records")
+def patch_records_bulk(session_id: int, body: BulkPatch, request: Request, user=Lecturer,
+                       conn: psycopg.Connection = Depends(get_conn)):
+    """Điểm danh hàng loạt (mất mạng, GPS phòng hỏng…): đặt cùng trạng thái tay cho nhiều sinh viên; mỗi dòng ghi nhật ký."""
+    svc.load_session_for_lecturer(conn, session_id, user["id"])
+    note = (body.note or "").strip() or None
+    ip = _ip(request)
+    with conn.transaction():
+        before = conn.execute("SELECT student_id, status, note FROM attendance_records WHERE session_id = %s "
+                              "AND student_id = ANY(%s) FOR UPDATE", (session_id, list(set(body.student_ids)))).fetchall()
+        conn.execute("UPDATE attendance_records SET status = %s, note = %s, decided_by = %s, updated_at = now() "
+                     "WHERE session_id = %s AND student_id = ANY(%s)",
+                     (body.status, note, user["id"], session_id, [b["student_id"] for b in before]))
+        for b in before:
+            audit.log(conn, user["id"], "record.update", f"attendance_records:{session_id}:{b['student_id']}",
+                      {"status": b["status"], "note": b["note"]}, {"status": body.status, "note": note, "bulk": True}, ip)
+    return {"updated": len(before), "skipped": len(set(body.student_ids)) - len(before)}
+
+
 def recenter_session(conn: psycopg.Connection, s: dict) -> dict:
     """Tâm mới = trung vị của tâm cũ và vị trí đã qua khuôn mặt; chấm lại lượt LOCATION_DRIFT, chỉ nâng hạng."""
     center = (s["center_lat"], s["center_lng"])

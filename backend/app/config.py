@@ -52,6 +52,12 @@ class AttendanceCfg(BaseModel):
     attachment_max_mb: float = 5
 
 
+class GradingCfg(BaseModel):
+    scale: float = 10                 # điểm chuyên cần = scale × (có mặt [+ có phép]) / số buổi
+    excused_as_present: bool = True   # buổi vắng có phép tính như có mặt khi chấm điểm
+    ban_absent_pct: float = 20        # vắng không phép quá ngần này % số buổi thì không đủ điều kiện dự thi
+
+
 class ReportCfg(BaseModel):
     school: str = "TRƯỜNG ĐẠI HỌC"   # dòng đầu của báo cáo Excel / PDF nộp khoa
     faculty: str = "KHOA CÔNG NGHỆ THÔNG TIN"
@@ -73,6 +79,7 @@ class Settings(BaseModel):
     consent: ConsentCfg = ConsentCfg()
     attendance: AttendanceCfg = AttendanceCfg()
     report: ReportCfg = ReportCfg()
+    grading: GradingCfg = GradingCfg()
     face: FaceCfg
     gps: GpsCfg
     session: SessionCfg

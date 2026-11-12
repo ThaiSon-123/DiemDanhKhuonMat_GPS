@@ -16,17 +16,21 @@ from app.services import report_export as export
 
 router = APIRouter(tags=["reports"])
 
-COLS = ("student_code", "full_name", "co_mat", "vang_co_phep", "vang", "chua_duyet", "so_buoi")
-HEADERS = ("MSSV", "Họ tên", "Có mặt", "Vắng có phép", "Vắng", "Chưa duyệt", "Số buổi")
+COLS = ("student_code", "full_name", "co_mat", "vang_co_phep", "vang", "chua_duyet", "so_buoi", "diem", "cam_thi")
+HEADERS = ("MSSV", "Họ tên", "Có mặt", "Vắng có phép", "Vắng", "Chưa duyệt", "Số buổi", "Điểm chuyên cần", "Cấm thi")
 
 
-@router.get("/reports/classes/{class_id}")
-def class_report(class_id: int, format: Literal["json", "csv", "xlsx", "pdf"] = "json",
-                 user=Depends(require_role("lecturer", "admin")), conn: psycopg.Connection = Depends(get_conn)):
-    c = conn.execute("SELECT c.id, c.code, c.name, c.semester, c.lecturer_id, l.full_name AS lecturer_name "
-                     "FROM classes c JOIN users l ON l.id = c.lecturer_id WHERE c.id = %s", (class_id,)).fetchone()
-    if not c or (user["role"] == "lecturer" and c["lecturer_id"] != user["id"]):
-        raise ApiError(404, "NOT_FOUND", "Không tìm thấy")
+def grade(r: dict) -> dict:
+    """Điểm chuyên cần và điều kiện dự thi của một dòng báo cáo (cấu hình grading)."""
+    g = get_settings().grading
+    n = r["so_buoi"]
+    present = r["co_mat"] + (r["vang_co_phep"] if g.excused_as_present else 0)
+    return {"diem": round(g.scale * present / n, 1) if n else None,
+            "cam_thi": bool(n) and 100 * r["vang"] / n > g.ban_absent_pct}
+
+
+def class_rows(conn: psycopg.Connection, class_id: int) -> list[dict]:
+    """Từng sinh viên của lớp: số buổi theo trạng thái, cảnh báo vắng, điểm chuyên cần, cấm thi."""
     rows = conn.execute(
         """SELECT u.id AS student_id, u.student_code, u.full_name,
                   count(*) FILTER (WHERE r.status IN ('present','manual_present')) AS co_mat,
@@ -40,14 +44,25 @@ def class_report(class_id: int, format: Literal["json", "csv", "xlsx", "pdf"] = 
            WHERE s.class_id = %s
            GROUP BY u.id ORDER BY u.student_code""", (class_id,)).fetchall()
     limit = get_settings().attendance.warn_absent
-    rows = [{**r, "warn": r["vang"] >= limit} for r in rows]
+    return [{**r, "warn": r["vang"] >= limit, **grade(r)} for r in rows]
+
+
+@router.get("/reports/classes/{class_id}")
+def class_report(class_id: int, format: Literal["json", "csv", "xlsx", "pdf"] = "json",
+                 user=Depends(require_role("lecturer", "admin")), conn: psycopg.Connection = Depends(get_conn)):
+    c = conn.execute("SELECT c.id, c.code, c.name, c.semester, c.lecturer_id, l.full_name AS lecturer_name "
+                     "FROM classes c JOIN users l ON l.id = c.lecturer_id WHERE c.id = %s", (class_id,)).fetchone()
+    if not c or (user["role"] == "lecturer" and c["lecturer_id"] != user["id"]):
+        raise ApiError(404, "NOT_FOUND", "Không tìm thấy")
+    rows = class_rows(conn, class_id)
+    limit = get_settings().attendance.warn_absent
     if format in ("xlsx", "pdf"):
         return _export(conn, c, rows, limit, format)
     if format == "csv":
         buf = io.StringIO()
         w = csv.writer(buf)
         w.writerow(HEADERS)
-        w.writerows([r[k] for k in COLS] for r in rows)
+        w.writerows([*(r[k] for k in COLS[:-1]), "x" if r["cam_thi"] else ""] for r in rows)
         return Response("﻿" + buf.getvalue(), media_type="text/csv; charset=utf-8",
                         headers={"Content-Disposition": f'attachment; filename="bao-cao-{c["code"]}.csv"'})
     sessions = conn.execute(
@@ -63,7 +78,7 @@ def class_report(class_id: int, format: Literal["json", "csv", "xlsx", "pdf"] = 
              JOIN attendance_sessions s ON s.id = a.session_id WHERE s.class_id = %s
              ORDER BY a.session_id, a.student_id, a.id) t""", (class_id,)).fetchone()
     return {"class": {k: c[k] for k in ("id", "code", "name", "semester")}, "session_count": len(sessions),
-            "warn_absent": limit,
+            "warn_absent": limit, "grading": get_settings().grading.model_dump(),
             "sessions": sessions, "first_try_pct": round(100 * first["ok"] / first["n"]) if first["n"] else None,
             "rows": rows}
 
@@ -78,7 +93,8 @@ def _export(conn: psycopg.Connection, c: dict, rows: list[dict], limit: int, fmt
         "SELECT r.student_id, r.session_id, r.status FROM attendance_records r "
         "JOIN attendance_sessions s ON s.id = r.session_id WHERE s.class_id = %s", (c["id"],))}
     cfg = get_settings().report
-    data = export.ReportData(cfg.school, cfg.faculty, c, rows, sessions, marks, limit, datetime.now(timezone.utc))
+    data = export.ReportData(cfg.school, cfg.faculty, c, rows, sessions, marks, limit, datetime.now(timezone.utc),
+                             get_settings().grading.ban_absent_pct)
     body = export.to_xlsx(data) if fmt == "xlsx" else export.to_pdf(data)
     name = f"bao-cao-chuyen-can-{c['code']}-{c['semester']}.{fmt}"
     return Response(body, media_type=MEDIA[fmt], headers={"Content-Disposition": f'attachment; filename="{name}"'})
@@ -142,3 +158,24 @@ def overview(semester: str | None = None, user=Depends(require_role("admin")),
                        (sem,)).fetchone()["n"]},
         "classes": classes, "flags": flags, "fail_reasons": fails,
     }
+
+
+@router.get("/admin/banned")
+def banned(semester: str | None = None, format: Literal["json", "xlsx", "pdf"] = "json",
+           user=Depends(require_role("admin")), conn: psycopg.Connection = Depends(get_conn)):
+    """Sinh viên không đủ điều kiện dự thi (vắng không phép quá grading.ban_absent_pct % số buổi), theo học kỳ."""
+    sem = semester or (conn.execute("SELECT max(semester) AS s FROM classes").fetchone()["s"])
+    classes = conn.execute("SELECT c.id, c.code, c.name, c.semester, l.full_name AS lecturer_name FROM classes c "
+                           "JOIN users l ON l.id = c.lecturer_id WHERE c.semester = %s ORDER BY c.code", (sem,)).fetchall()
+    rows = [{"class_code": c["code"], "class_name": c["name"], "lecturer_name": c["lecturer_name"], **r,
+             "pct": round(100 * r["vang"] / r["so_buoi"])}
+            for c in classes for r in class_rows(conn, c["id"]) if r["cam_thi"]]
+    g = get_settings().grading
+    if format == "json":
+        semesters = [r["semester"] for r in conn.execute("SELECT DISTINCT semester FROM classes ORDER BY semester DESC")]
+        return {"semester": sem, "semesters": semesters, "ban_absent_pct": g.ban_absent_pct, "rows": rows}
+    cfg = get_settings().report
+    data = export.BannedData(cfg.school, cfg.faculty, sem, g.ban_absent_pct, rows, datetime.now(timezone.utc))
+    body = export.banned_xlsx(data) if format == "xlsx" else export.banned_pdf(data)
+    return Response(body, media_type=MEDIA[format],
+                    headers={"Content-Disposition": f'attachment; filename="danh-sach-cam-thi-{sem}.{format}"'})

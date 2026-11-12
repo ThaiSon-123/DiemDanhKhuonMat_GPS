@@ -47,6 +47,7 @@ void main() {
             {'id': 2, 'full_name': 'TS. Trần Minh Đức', 'username': 'ducdm'},
           ])),
         ('GET', '/admin/enrollments') => (200, enrolled),
+        ('GET', '/admin/classes/3/schedules') => (200, [{'id': 1, 'class_id': 3, 'weekday': 2, 'start_time': '07:00:00', 'end_time': '09:30:00', 'room': 'D9-301'}]),
         ('POST', '/admin/enrollments') when body['student_code'] == 'SV404' => (422, {
             'error': {'code': 'VALIDATION_ERROR', 'message': 'Dữ liệu gửi lên không hợp lệ',
                       'details': [{'field': 'student_code', 'msg': 'Không có sinh viên với mã: SV404'}]},
@@ -63,13 +64,15 @@ void main() {
     expect(find.text('10'), findsOneWidget);          // phiên đã điểm danh
     expect(find.text('Nguyễn Văn An'), findsOneWidget);
     expect(find.text('TS. Trần Minh Đức (ducdm)'), findsOneWidget);
+    expect(find.text('Thứ Ba'), findsOneWidget); // lịch học của lớp
+    expect(find.text('D9-301'), findsOneWidget);
 
-    await t.enterText(find.byType(TextField), 'SV404');
+    await t.enterText(find.byType(TextField).first, 'SV404');
     await t.tap(find.text('Thêm'));
     await t.pumpAndSettle();
     expect(find.text('Không có sinh viên với mã: SV404'), findsOneWidget);
 
-    await t.enterText(find.byType(TextField), 'SV009');
+    await t.enterText(find.byType(TextField).first, 'SV009');
     await t.tap(find.text('Thêm'));
     await t.pumpAndSettle();
     expect(find.text('Trần Gia Bảo'), findsOneWidget);

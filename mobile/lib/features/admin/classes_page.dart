@@ -6,6 +6,7 @@ import '../../core/session.dart';
 import '../../ui/neo.dart';
 import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
+import '../schedule.dart';
 import 'admin_widgets.dart';
 
 const _tiles = [
@@ -455,6 +456,8 @@ class ClassesPageState extends State<ClassesPage> {
             ],
           ),
         ),
+        const SizedBox(height: 20),
+        ScheduleEditor(key: ValueKey(c['id']), api: _api, classId: c['id'] as int),
         const SizedBox(height: 20),
         NeoCard(
           padding: EdgeInsets.zero,

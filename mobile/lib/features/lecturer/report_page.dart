@@ -277,7 +277,7 @@ class _ReportPageState extends State<ReportPage> {
             child: SizedBox(
               width: c.maxWidth < 720 ? 720 : c.maxWidth,
               child: Column(children: [
-                _tableRow(const ['Sinh viên', 'Có mặt', 'Có phép', 'Vắng', 'Chờ duyệt', 'Tỉ lệ có mặt'], header: true),
+                _tableRow(const ['Sinh viên', 'Có mặt', 'Có phép', 'Vắng', 'Chờ duyệt', 'Điểm CC', 'Tỉ lệ có mặt'], header: true),
                 for (final (i, x) in rows.indexed) _studentRow(i, x),
               ]),
             ),
@@ -287,7 +287,7 @@ class _ReportPageState extends State<ReportPage> {
     ];
   }
 
-  static const _flex = [32, 11, 11, 11, 11, 24];
+  static const _flex = [30, 10, 10, 10, 10, 10, 22];
 
   Widget _tableRow(List<Object> cells, {bool header = false, Color? absentColor}) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -303,7 +303,7 @@ class _ReportPageState extends State<ReportPage> {
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: header ? 10 : 12),
                 child: c is Widget
                     ? c
-                    : Text('$c', textAlign: i > 0 && i < 5 ? TextAlign.right : TextAlign.left,
+                    : Text('$c', textAlign: i > 0 && i < 6 ? TextAlign.right : TextAlign.left,
                         style: header
                             ? const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMuted)
                             : TextStyle(fontSize: 14, color: i == 3 && absentColor != null ? absentColor : AppColors.text,
@@ -328,11 +328,19 @@ class _ReportPageState extends State<ReportPage> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('${x['full_name']}', overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.text)),
-            Text('${x['student_code']}', style: mono.copyWith(fontSize: 11, color: AppColors.textMuted)),
+            Row(children: [
+              Text('${x['student_code']}', style: mono.copyWith(fontSize: 11, color: AppColors.textMuted)),
+              if (x['cam_thi'] == true) ...[
+                const SizedBox(width: 6),
+                Pill('Cấm thi', bg: AppColors.absentSoft, fg: AppColors.absentText, border: AppColors.absentBorder, fontSize: 10,
+                    padding: const EdgeInsets.symmetric(horizontal: 6)),
+              ],
+            ]),
           ]),
         ),
       ]),
       x['co_mat'], x['vang_co_phep'], x['vang'], x['chua_duyet'],
+      x['diem'] == null ? '–' : (x['diem'] as num).toStringAsFixed(1).replaceAll('.', ','),
       Row(children: [
         Expanded(
           child: ClipRRect(

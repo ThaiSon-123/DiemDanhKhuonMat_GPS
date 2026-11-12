@@ -1,5 +1,5 @@
 """Quản trị: người dùng, lớp, danh sách lớp, nhập CSV, nhật ký (đặc tả mục 4.1, 9.3)."""
-from datetime import datetime
+from datetime import datetime, time
 from typing import Literal
 
 import psycopg
@@ -303,6 +303,47 @@ def delete_class(class_id: int, request: Request, admin=Admin, conn=Conn):
         raise ApiError(409, "CLASS_HAS_SESSIONS", "Lớp đã có phiên điểm danh, không xóa được")
     conn.execute("DELETE FROM classes WHERE id = %s", (class_id,))  # enrollments xóa theo (ON DELETE CASCADE)
     audit.log(conn, admin["id"], "class.delete", f"classes:{class_id}", before=_class_public(before), ip=ip_of(request))
+    return Response(status_code=204)
+
+
+# ---------------- Lịch học ----------------
+
+class ScheduleIn(BaseModel):
+    weekday: int = Field(ge=1, le=7)      # 1 = Thứ Hai … 7 = Chủ nhật
+    start_time: time
+    end_time: time
+    room: str | None = Field(None, max_length=50)
+
+
+@router.get("/classes/{class_id}/schedules")
+def list_schedules(class_id: int, _=Admin, conn=Conn):
+    get_class(conn, class_id)
+    return conn.execute("SELECT * FROM class_schedules WHERE class_id = %s ORDER BY weekday, start_time",
+                        (class_id,)).fetchall()
+
+
+@router.post("/classes/{class_id}/schedules", status_code=201)
+def add_schedule(class_id: int, body: ScheduleIn, request: Request, admin=Admin, conn=Conn):
+    get_class(conn, class_id)
+    if body.end_time <= body.start_time:
+        raise invalid("end_time", "Giờ kết thúc phải sau giờ bắt đầu")
+    room = (body.room or "").strip() or None
+    row = conn.execute("INSERT INTO class_schedules (class_id, weekday, start_time, end_time, room) "
+                       "VALUES (%s, %s, %s, %s, %s) RETURNING *",
+                       (class_id, body.weekday, body.start_time, body.end_time, room)).fetchone()
+    audit.log(conn, admin["id"], "class.schedule.add", f"classes:{class_id}",
+              after={"weekday": body.weekday, "start": str(body.start_time), "end": str(body.end_time), "room": room},
+              ip=ip_of(request))
+    return row
+
+
+@router.delete("/schedules/{schedule_id}", status_code=204)
+def delete_schedule(schedule_id: int, request: Request, admin=Admin, conn=Conn):
+    row = conn.execute("DELETE FROM class_schedules WHERE id = %s RETURNING *", (schedule_id,)).fetchone()
+    if not row:
+        raise not_found()
+    audit.log(conn, admin["id"], "class.schedule.delete", f"classes:{row['class_id']}",
+              before={"weekday": row["weekday"], "start": str(row["start_time"]), "room": row["room"]}, ip=ip_of(request))
     return Response(status_code=204)
 
 
