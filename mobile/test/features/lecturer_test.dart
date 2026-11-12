@@ -184,6 +184,12 @@ void main() {
     expect(find.text('84%'), findsOneWidget);
     expect(find.text('Hoàng Đức Minh'), findsOneWidget);
     expect(find.text('25%'), findsOneWidget);
+    // Xuất Excel gọi đúng định dạng; trong test (không phải web) báo chỉ tải được trên bản web.
+    expect(find.text('PDF nộp khoa'), findsOneWidget);
+    expect(find.text('CSV'), findsOneWidget);
+    await t.tap(find.text('Xuất Excel'));
+    await t.pumpAndSettle();
+    expect(find.text('Xuất file dùng trên bản web (laptop).'), findsOneWidget);
   });
 
   testWidgets('lịch sử chuyên cần sinh viên: theo lớp, tỉ lệ, nhãn trạng thái', (t) async {

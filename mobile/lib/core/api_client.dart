@@ -23,9 +23,9 @@ class ApiClient {
   Future<dynamic> delete(String path) => _send(path, 'DELETE');
 
   /// Tải nội dung nhị phân (vd ảnh bằng chứng image/jpeg).
-  Future<Uint8List> getBytes(String path) async {
+  Future<Uint8List> getBytes(String path, {Map<String, dynamic>? query}) async {
     try {
-      final r = await dio.get<List<int>>(path, options: Options(responseType: ResponseType.bytes));
+      final r = await dio.get<List<int>>(path, queryParameters: query, options: Options(responseType: ResponseType.bytes));
       return Uint8List.fromList(r.data!);
     } on DioException catch (e) {
       throw ApiError.fromDio(e);

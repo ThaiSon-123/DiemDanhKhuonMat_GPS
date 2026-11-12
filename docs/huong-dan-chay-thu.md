@@ -99,7 +99,9 @@ Cửa sổ ẩn danh:
 1. Màn **Phiên đang chạy** tự làm mới mỗi 4 giây: bộ đếm Có mặt / Đáng ngờ / Chưa thay đổi.
 2. Lọc **Tất cả** hoặc **Chưa**, chạm vào `sv002` (chưa điểm danh), chọn **Vắng có phép**, ghi chú, rồi bấm **Lưu quyết định**.
 3. Bấm **Đóng** và xác nhận. Sau khi đóng vẫn sửa được kết quả.
-4. Về **Lớp**, bấm **Lịch sử**: thấy buổi vừa rồi. Nút biểu đồ trên đầu trang mở **Báo cáo**, bấm **Xuất CSV** để tải file (mở được bằng Excel, tiếng Việt hiển thị đúng).
+4. Về **Lớp**, bấm **Lịch sử**: thấy buổi vừa rồi. Nút biểu đồ trên đầu trang mở **Báo cáo**:
+   **Xuất Excel** (sheet Tổng hợp + Chi tiết từng buổi), **PDF nộp khoa** (A4, có chỗ ký), hoặc **CSV**.
+   Tên trường và khoa trên báo cáo sửa ở mục `report:` trong `backend/config.yaml`.
 5. Quản trị cũng xem được báo cáo ở mục **Báo cáo**.
 6. Sinh viên mở tab **Lịch sử** để thấy buổi vừa điểm danh.
 

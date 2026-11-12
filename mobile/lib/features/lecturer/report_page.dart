@@ -74,17 +74,34 @@ class _ReportPageState extends State<ReportPage> {
     }
   }
 
-  Future<void> _export() async {
+  String? _exporting;
+
+  /// Xuất báo cáo: xlsx (tổng hợp + chi tiết từng buổi), pdf (A4, có chỗ ký), csv (dữ liệu thô).
+  Future<void> _export(String fmt) async {
+    setState(() {
+      _exporting = fmt;
+      _error = null;
+    });
+    final c = _report?['class'] as Map?;
+    final name = 'bao-cao-chuyen-can-${c?['code'] ?? _classId}-${c?['semester'] ?? ''}.$fmt';
     try {
-      final csv = await widget.session.api.get('/reports/classes/$_classId', query: {'format': 'csv'});
-      final code = _report?['class']?['code'] ?? _classId;
-      downloadText('bao-cao-$code.csv', '$csv'.replaceFirst('﻿', ''));
+      if (fmt == 'csv') {
+        final csv = await widget.session.api.get('/reports/classes/$_classId', query: {'format': 'csv'});
+        downloadText(name, '$csv'.replaceFirst('\uFEFF', ''));
+      } else {
+        final b = await widget.session.api.getBytes('/reports/classes/$_classId', query: {'format': fmt});
+        downloadBytes(name, b, fmt == 'pdf' ? 'application/pdf' : _xlsxMime);
+      }
     } on ApiError catch (e) {
       if (mounted) setState(() => _error = e.message);
     } on UnsupportedError {
-      if (mounted) setState(() => _error = 'Xuất CSV dùng trên bản web (laptop).');
+      if (mounted) setState(() => _error = 'Xuất file dùng trên bản web (laptop).');
+    } finally {
+      if (mounted) setState(() => _exporting = null);
     }
   }
+
+  static const _xlsxMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
   @override
   Widget build(BuildContext context) {
@@ -139,10 +156,25 @@ class _ReportPageState extends State<ReportPage> {
                   height: 44,
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-                    onPressed: r == null ? null : _export,
-                    icon: const Icon(Icons.download, size: 18),
-                    label: const Text('Xuất CSV'),
+                    onPressed: r == null || _exporting != null ? null : () => _export('xlsx'),
+                    icon: const Icon(Icons.table_view, size: 18),
+                    label: Text(_exporting == 'xlsx' ? 'Đang xuất…' : 'Xuất Excel'),
                   ),
+                ),
+                SizedBox(
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.text,
+                        side: const BorderSide(color: AppColors.inputBorder),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                    onPressed: r == null || _exporting != null ? null : () => _export('pdf'),
+                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 18, color: AppColors.absentText),
+                    label: Text(_exporting == 'pdf' ? 'Đang xuất…' : 'PDF nộp khoa'),
+                  ),
+                ),
+                TextButton(
+                  onPressed: r == null || _exporting != null ? null : () => _export('csv'),
+                  child: const Text('CSV'),
                 ),
               ]),
               const SizedBox(height: 20),

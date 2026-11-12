@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:js_interop';
+import 'dart:typed_data';
 
 import 'package:web/web.dart' as web;
 
@@ -30,6 +31,17 @@ Future<PickedText?> pickTextFile({String accept = '.csv'}) {
 /// Tải chuỗi về máy dưới dạng file; thêm BOM để Excel đọc đúng tiếng Việt.
 void downloadText(String fileName, String text) {
   final blob = web.Blob(['﻿$text'.toJS].toJS, web.BlobPropertyBag(type: 'text/csv;charset=utf-8'));
+  final url = web.URL.createObjectURL(blob);
+  web.HTMLAnchorElement()
+    ..href = url
+    ..download = fileName
+    ..click();
+  web.URL.revokeObjectURL(url);
+}
+
+/// Tải dữ liệu nhị phân (Excel, PDF) về máy.
+void downloadBytes(String fileName, Uint8List bytes, String mime) {
+  final blob = web.Blob([bytes.toJS].toJS, web.BlobPropertyBag(type: mime));
   final url = web.URL.createObjectURL(blob);
   web.HTMLAnchorElement()
     ..href = url

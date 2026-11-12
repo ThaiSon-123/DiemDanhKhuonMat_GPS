@@ -52,6 +52,11 @@ class AttendanceCfg(BaseModel):
     attachment_max_mb: float = 5
 
 
+class ReportCfg(BaseModel):
+    school: str = "TRƯỜNG ĐẠI HỌC"   # dòng đầu của báo cáo Excel / PDF nộp khoa
+    faculty: str = "KHOA CÔNG NGHỆ THÔNG TIN"
+
+
 class AuthCfg(BaseModel):
     access_minutes: int = 15
     refresh_days: int = 7
@@ -67,6 +72,7 @@ class Settings(BaseModel):
     auth: AuthCfg = AuthCfg()
     consent: ConsentCfg = ConsentCfg()
     attendance: AttendanceCfg = AttendanceCfg()
+    report: ReportCfg = ReportCfg()
     face: FaceCfg
     gps: GpsCfg
     session: SessionCfg

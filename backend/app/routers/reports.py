@@ -1,6 +1,8 @@
 """Báo cáo chuyên cần theo lớp (đặc tả mục 9.2, 9.5)."""
 import csv
 import io
+from datetime import datetime, timezone
+from typing import Literal
 
 import psycopg
 from fastapi import APIRouter, Depends
@@ -10,6 +12,7 @@ from app.config import get_settings
 from app.db import get_conn
 from app.errors import ApiError
 from app.security import require_role
+from app.services import report_export as export
 
 router = APIRouter(tags=["reports"])
 
@@ -18,9 +21,10 @@ HEADERS = ("MSSV", "Họ tên", "Có mặt", "Vắng có phép", "Vắng", "Chư
 
 
 @router.get("/reports/classes/{class_id}")
-def class_report(class_id: int, format: str = "json", user=Depends(require_role("lecturer", "admin")),
-                 conn: psycopg.Connection = Depends(get_conn)):
-    c = conn.execute("SELECT id, code, name, semester, lecturer_id FROM classes WHERE id = %s", (class_id,)).fetchone()
+def class_report(class_id: int, format: Literal["json", "csv", "xlsx", "pdf"] = "json",
+                 user=Depends(require_role("lecturer", "admin")), conn: psycopg.Connection = Depends(get_conn)):
+    c = conn.execute("SELECT c.id, c.code, c.name, c.semester, c.lecturer_id, l.full_name AS lecturer_name "
+                     "FROM classes c JOIN users l ON l.id = c.lecturer_id WHERE c.id = %s", (class_id,)).fetchone()
     if not c or (user["role"] == "lecturer" and c["lecturer_id"] != user["id"]):
         raise ApiError(404, "NOT_FOUND", "Không tìm thấy")
     rows = conn.execute(
@@ -35,6 +39,10 @@ def class_report(class_id: int, format: str = "json", user=Depends(require_role(
            JOIN users u ON u.id = r.student_id
            WHERE s.class_id = %s
            GROUP BY u.id ORDER BY u.student_code""", (class_id,)).fetchall()
+    limit = get_settings().attendance.warn_absent
+    rows = [{**r, "warn": r["vang"] >= limit} for r in rows]
+    if format in ("xlsx", "pdf"):
+        return _export(conn, c, rows, limit, format)
     if format == "csv":
         buf = io.StringIO()
         w = csv.writer(buf)
@@ -54,12 +62,26 @@ def class_report(class_id: int, format: str = "json", user=Depends(require_role(
              SELECT DISTINCT ON (a.session_id, a.student_id) a.result FROM checkin_attempts a
              JOIN attendance_sessions s ON s.id = a.session_id WHERE s.class_id = %s
              ORDER BY a.session_id, a.student_id, a.id) t""", (class_id,)).fetchone()
-    limit = get_settings().attendance.warn_absent
-    rows = [{**r, "warn": r["vang"] >= limit} for r in rows]
     return {"class": {k: c[k] for k in ("id", "code", "name", "semester")}, "session_count": len(sessions),
             "warn_absent": limit,
             "sessions": sessions, "first_try_pct": round(100 * first["ok"] / first["n"]) if first["n"] else None,
             "rows": rows}
+
+
+MEDIA = {"xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "pdf": "application/pdf"}
+
+
+def _export(conn: psycopg.Connection, c: dict, rows: list[dict], limit: int, fmt: str) -> Response:
+    sessions = conn.execute("SELECT id, opened_at FROM attendance_sessions WHERE class_id = %s ORDER BY opened_at",
+                            (c["id"],)).fetchall()
+    marks = {(m["student_id"], m["session_id"]): m["status"] for m in conn.execute(
+        "SELECT r.student_id, r.session_id, r.status FROM attendance_records r "
+        "JOIN attendance_sessions s ON s.id = r.session_id WHERE s.class_id = %s", (c["id"],))}
+    cfg = get_settings().report
+    data = export.ReportData(cfg.school, cfg.faculty, c, rows, sessions, marks, limit, datetime.now(timezone.utc))
+    body = export.to_xlsx(data) if fmt == "xlsx" else export.to_pdf(data)
+    name = f"bao-cao-chuyen-can-{c['code']}-{c['semester']}.{fmt}"
+    return Response(body, media_type=MEDIA[fmt], headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
 
 @router.get("/admin/overview")

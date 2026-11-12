@@ -290,6 +290,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 - [x] `GET /admin/overview`: tỉ lệ có mặt theo lớp và học kỳ, sinh viên vắng nhiều, cờ đáng ngờ, lý do lượt không đạt
 - [x] `POST /faces/precheck`: kiểm tra nhanh một khung (chất lượng + hướng mặt) để app tự chụp
 - [x] `test_requests.py` (8 test)
+- [x] Báo cáo nộp khoa: `GET /reports/classes/{id}?format=xlsx` (sheet Tổng hợp + Chi tiết buổi, tô đỏ SV vắng nhiều, chỗ ký) và `?format=pdf` (A4, font Inter tiếng Việt); tên trường/khoa trong `report:` của `config.yaml`
 
 # 2. App Flutter (Android / iOS / Web)
 
@@ -453,7 +454,7 @@ Mỗi tính năng thường cần làm cả **Backend** (API + SQL + kiểm tra 
 | Phi chức năng (4) | 0/13 | |
 | Triển khai & chạy thử (5) | 0% | |
 
-**Tổng cộng**: 230 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 62 mục `[ ]` (297 items)
+**Tổng cộng**: 231 mục `[x]` / 2 mục `[~]` / 3 mục `[!]` / 62 mục `[ ]` (298 items)
 
 ### Bước tiếp theo khuyến nghị
 

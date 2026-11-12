@@ -190,3 +190,30 @@ def test_me_attendance_only_mine(client, auth, conn, world):
     assert r[0]["checked_at"] is not None
     assert "face_score" not in r[0]
     assert client.get("/me/attendance", headers=auth(world["gv"])).status_code == 403
+
+
+def test_report_xlsx_has_summary_and_session_sheets(client, auth, conn, world):
+    import io
+
+    from openpyxl import load_workbook
+    attempt(conn, world, 0, result="pass", d_m=5, flags=())
+    client.patch(f"/sessions/{world['sid']}/records/{world['students'][2]['id']}", headers=auth(world["gv"]),
+                 json={"status": "excused"})
+    r = client.get(f"/reports/classes/{world['class']['id']}?format=xlsx", headers=auth(world["gv"]))
+    assert r.headers["content-type"].startswith("application/vnd.openxmlformats")
+    assert f'bao-cao-chuyen-can-{world["class"]["code"]}' in r.headers["content-disposition"]
+    wb = load_workbook(io.BytesIO(r.content))
+    assert wb.sheetnames == ["Tổng hợp", "Chi tiết buổi"]
+    cells = [c for row in wb["Tổng hợp"].iter_rows(values_only=True) for c in row if c is not None]
+    assert "BÁO CÁO CHUYÊN CẦN" in cells and world["students"][0]["full_name"] in cells
+    assert world["gv"]["full_name"] in cells  # chỗ ký
+    detail = [c for row in wb["Chi tiết buổi"].iter_rows(values_only=True) for c in row if c is not None]
+    assert detail.count("C") == 1 and detail.count("P") == 1 and detail.count("V") == 4
+
+
+def test_report_pdf(client, auth, world, make_user):
+    r = client.get(f"/reports/classes/{world['class']['id']}?format=pdf", headers=auth(world["gv"]))
+    assert r.headers["content-type"] == "application/pdf" and r.content.startswith(b"%PDF")
+    assert client.get(f"/reports/classes/{world['class']['id']}?format=pdf",
+                      headers=auth(make_user("lecturer"))).status_code == 404
+    assert client.get(f"/reports/classes/{world['class']['id']}?format=doc", headers=auth(world["gv"])).status_code == 422

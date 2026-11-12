@@ -18,6 +18,8 @@ dependencies = [
   "onnxruntime",
   "opencv-python-headless",  # máy dev cài thêm opencv-python để spike_face.py mở được cửa sổ webcam
   "python-multipart",  # nhận ảnh multipart ở /faces/enroll và /checkin
+  "openpyxl",  # báo cáo Excel
+  "fpdf2",     # báo cáo PDF (font Inter trong app/fonts, có tiếng Việt)
 ]
 
 [project.optional-dependencies]
