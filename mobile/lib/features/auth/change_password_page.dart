@@ -7,9 +7,15 @@ import '../../ui/neo.dart';
 import '../../ui/theme.dart';
 
 /// Artboard "Chung · Đổi mật khẩu bắt buộc" (DoiMatKhau.dc.html).
+/// [voluntary]: người dùng tự mở từ mục Tài khoản: có nút quay lại, đổi xong thì đóng màn.
 class ChangePasswordPage extends StatefulWidget {
-  const ChangePasswordPage({super.key, required this.session});
+  const ChangePasswordPage({super.key, required this.session, this.voluntary = false});
   final Session session;
+  final bool voluntary;
+
+  /// Mở màn tự đổi mật khẩu đè lên màn hiện tại.
+  static Future<void> open(BuildContext context, Session session) => Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => ChangePasswordPage(session: session, voluntary: true)));
 
   @override
   State<ChangePasswordPage> createState() => _ChangePasswordPageState();
@@ -44,6 +50,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     });
     try {
       await widget.session.changePassword(_old.text, _new.text);
+      if (widget.voluntary && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Đã đổi mật khẩu. Các thiết bị khác đã bị đăng xuất.'), behavior: SnackBarBehavior.floating));
+        Navigator.of(context).pop();
+      }
     } on ApiError catch (e) {
       if (mounted) setState(() => _serverError = e.message);
     } finally {
@@ -82,7 +93,17 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         ],
       ),
       children: [
-        const HeroCard(
+        if (widget.voluntary)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton.outlined(
+              tooltip: 'Quay lại',
+              style: IconButton.styleFrom(backgroundColor: Colors.white, side: const BorderSide(color: AppColors.cardBorder)),
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back, size: 20, color: AppColors.textSecondary),
+            ),
+          ),
+        HeroCard(
           emeraldGlow: false,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,7 +127,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               ),
               SizedBox(height: 12),
               Text(
-                'Đặt mật khẩu mới',
+                widget.voluntary ? 'Đổi mật khẩu' : 'Đặt mật khẩu mới',
                 style: TextStyle(
                   fontSize: 24,
                   height: 30 / 24,
@@ -116,7 +137,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               ),
               SizedBox(height: 12),
               Text(
-                'Bạn đang dùng mật khẩu tạm do khoa cấp. Hãy đặt mật khẩu của riêng bạn để tiếp tục.',
+                widget.voluntary
+                    ? 'Nhập mật khẩu đang dùng rồi đặt mật khẩu mới. Mật khẩu mới có hiệu lực ngay.'
+                    : 'Bạn đang dùng mật khẩu tạm do khoa cấp. Hãy đặt mật khẩu của riêng bạn để tiếp tục.',
                 style: TextStyle(
                   fontSize: 14,
                   height: 20 / 14,
@@ -131,7 +154,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               AppTextField(
-                label: 'Mật khẩu tạm',
+                label: widget.voluntary ? 'Mật khẩu hiện tại' : 'Mật khẩu tạm',
                 controller: _old,
                 obscure: true,
                 onChanged: refresh,
@@ -169,7 +192,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                       runSpacing: 6,
                       children: [
                         _Rule(ok: _longEnough, text: 'Ít nhất 8 ký tự'),
-                        _Rule(ok: _differs, text: 'Khác mật khẩu tạm'),
+                        _Rule(ok: _differs, text: widget.voluntary ? 'Khác mật khẩu cũ' : 'Khác mật khẩu tạm'),
                       ],
                     ),
                   ],

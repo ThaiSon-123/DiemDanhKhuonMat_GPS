@@ -51,6 +51,7 @@ void main() {
               'must_change_password': false, 'consent': {'current_version': 'v1', 'accepted': true},
               'face': {'status': 'approved', 'reject_reason': null, 'model_ok': true, 'pending_update': false},
             }),
+          '/me/attendance' => (200, []),
           '/me/classes' => (200, [
               {'id': 3, 'code': 'IT4060', 'name': 'Học máy', 'semester': '2026-1', 'lecturer_name': 'TS. Trần Minh Đức',
                'open_session': {'id': 41, 'expires_at': _soon, 'room_check': true}},

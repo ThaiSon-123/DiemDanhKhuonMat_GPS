@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/session.dart';
@@ -6,6 +7,7 @@ import 'features/auth/login_page.dart';
 import 'features/admin/admin_shell.dart';
 import 'features/lecturer/lecturer_home_page.dart';
 import 'features/lecturer/lecturer_nav.dart';
+import 'features/lecturer/lecturer_shell.dart';
 import 'features/lecturer/live_session_page.dart';
 import 'features/lecturer/open_session_page.dart';
 import 'features/lecturer/report_page.dart';
@@ -19,11 +21,14 @@ import 'features/student/history_page.dart';
 import 'features/student/my_face_page.dart';
 import 'features/student/student_home_page.dart';
 
+final _rootKey = GlobalKey<NavigatorState>();
+
 int _id(GoRouterState st, String k) => int.parse(st.pathParameters[k]!);
 
 const homeByRole = {'student': '/student', 'lecturer': '/lecturer', 'admin': '/admin'};
 
 GoRouter buildRouter(Session session) => GoRouter(
+      navigatorKey: _rootKey,
       initialLocation: '/login',
       refreshListenable: session,
       redirect: (_, state) {
@@ -50,8 +55,13 @@ GoRouter buildRouter(Session session) => GoRouter(
                     className: st.uri.queryParameters['name'] ?? '',
                   )),
         ]),
+        ShellRoute(
+          builder: (_, st, child) => LecturerShell(session: session, location: st.uri.path, child: child),
+          routes: [
         GoRoute(path: '/lecturer', builder: (_, _) => LecturerHomePage(session: session), routes: [
           GoRoute(path: 'faces', builder: (_, _) => LecturerFacesPage(session: session)),
+          GoRoute(path: 'project', builder: (_, _) => ProjectPickerPage(session: session)),
+          GoRoute(path: 'report', builder: (_, _) => ReportPage(session: session, standalone: true)),
           GoRoute(
               path: 'open/:cid',
               builder: (_, st) => OpenSessionPage(session: session, classId: _id(st, 'cid'),
@@ -62,12 +72,18 @@ GoRouter buildRouter(Session session) => GoRouter(
                   classCode: st.uri.queryParameters['code'] ?? '', studentCount: int.tryParse(st.uri.queryParameters['n'] ?? ''))),
           GoRoute(path: 'report/:cid', builder: (_, st) => ReportPage(session: session, classId: _id(st, 'cid'), standalone: true)),
           GoRoute(path: 'session/:sid', builder: (_, st) => LiveSessionPage(session: session, sessionId: _id(st, 'sid')), routes: [
-            GoRoute(path: 'room', builder: (_, st) => RoomCodePage(session: session, sessionId: _id(st, 'sid'))),
+            // Màn chiếu toàn màn hình: nằm trên navigator gốc, không có thanh bên.
+            GoRoute(
+                path: 'room',
+                parentNavigatorKey: _rootKey,
+                builder: (_, st) => RoomCodePage(session: session, sessionId: _id(st, 'sid'))),
             GoRoute(
                 path: 'student/:uid',
                 builder: (_, st) => StudentDetailPage(session: session, sessionId: _id(st, 'sid'), studentId: _id(st, 'uid'))),
           ]),
         ]),
+          ],
+        ),
         GoRoute(path: '/admin', builder: (_, _) => AdminShell(session: session)),
       ],
     );

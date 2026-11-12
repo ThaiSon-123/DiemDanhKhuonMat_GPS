@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
+import '../auth/change_password_page.dart';
 
-/// Tạm thời cho tab "Tài khoản" cho đến khi có màn tài khoản thật: thông tin + đăng xuất.
+/// Tab "Tài khoản": thông tin, đổi mật khẩu, đăng xuất.
 Future<void> showAccountSheet(BuildContext context, Session session) {
   final u = session.user ?? const {};
   final name = '${u['full_name'] ?? ''}';
@@ -27,6 +28,24 @@ Future<void> showAccountSheet(BuildContext context, Session session) {
             ),
           ]),
           const SizedBox(height: 20),
+          SizedBox(
+            height: 52,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.text,
+                side: const BorderSide(color: AppColors.inputBorder),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              onPressed: () {
+                Navigator.pop(ctx);
+                ChangePasswordPage.open(context, session);
+              },
+              icon: const Icon(Icons.lock_reset, size: 19),
+              label: const Text('Đổi mật khẩu'),
+            ),
+          ),
+          const SizedBox(height: 10),
           FilledButton.icon(
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.absentSoft,

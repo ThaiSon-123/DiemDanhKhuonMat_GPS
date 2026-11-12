@@ -71,6 +71,7 @@ void main() {
     final (_, went) = await pump(t, (s) => StudentHomePage(session: s), (o) => switch (o.path) {
           '/me' => (200, me(consent: false)),
           '/me/classes' => (200, []),
+          '/me/attendance' => (200, []),
           _ => (404, apiErr('NOT_FOUND', 'x')),
         });
     expect(find.text('Đăng ký khuôn mặt'), findsOneWidget);
@@ -123,7 +124,8 @@ void main() {
   testWidgets('từ chối quyền camera thì hiện màn hướng dẫn cấp quyền', (t) async {
     await pump(t, (s) => EnrollPage(session: s, camera: FakeCamera(denied: true)), (_) => (200, me()));
     expect(find.text('Cần quyền dùng camera'), findsOneWidget);
-    expect(find.text('Thử lại'), findsOneWidget);
+    expect(find.text('Mở cài đặt'), findsOneWidget); // điện thoại: mở trang cài đặt của ứng dụng
+    expect(find.text('Đã bật, thử lại'), findsOneWidget);
   });
 
   testWidgets('khuôn mặt của tôi: xóa phải xác nhận rồi mới gọi DELETE /me/face', (t) async {

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'face_scan_icon.dart';
 import 'theme.dart';
+import 'web_shell.dart';
 
 /// Chữ đơn cách cho mã, giờ, số liệu (canvas: ui-monospace, Consolas, monospace).
 const mono = TextStyle(fontFamily: 'monospace', fontFamilyFallback: ['Consolas', 'Menlo', 'Courier New']);
@@ -342,7 +343,7 @@ class PhoneShell extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 480),
             child: Stack(children: [
               Column(children: [header, Expanded(child: body)]),
-              Positioned(left: 16, right: 16, bottom: 14, child: dock),
+              if (!InWebShell.of(context)) Positioned(left: 16, right: 16, bottom: 14, child: dock), // web: thanh bên thay dock
             ]),
           ),
         ),

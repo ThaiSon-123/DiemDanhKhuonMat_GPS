@@ -6,6 +6,7 @@ import '../../core/session.dart';
 import '../../ui/neo.dart';
 import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
+import '../auth/change_password_page.dart';
 import 'student_nav.dart';
 
 /// Artboard "SV · Khuôn mặt của tôi" (SV_KhuonMatCuaToi.dc.html), cũng là tab Tài khoản. Dữ liệu: GET /me.
@@ -169,6 +170,11 @@ class _MyFacePageState extends State<MyFacePage> {
               ),
             ],
           ),
+        ),
+        IconButton(
+          tooltip: 'Đổi mật khẩu',
+          onPressed: () => ChangePasswordPage.open(context, widget.session),
+          icon: const Icon(Icons.lock_reset, size: 20, color: AppColors.textSecondary),
         ),
         IconButton(
           tooltip: 'Đăng xuất',

@@ -103,6 +103,14 @@ Cửa sổ ẩn danh:
 5. Quản trị cũng xem được báo cáo ở mục **Báo cáo**.
 6. Sinh viên mở tab **Lịch sử** để thấy buổi vừa điểm danh.
 
+## 8b. Những phần khác nên thử
+
+- **Đổi mật khẩu**: sinh viên ở tab Tài khoản (biểu tượng ổ khóa), giảng viên ở bảng Tài khoản trên dock, quản trị và giảng viên trên web ở menu ⋮ cạnh tên.
+- **Thông báo** (chuông trên trang chủ sinh viên): có chấm đỏ khi lớp đang mở điểm danh hoặc ảnh khuôn mặt bị từ chối.
+- **Giảng viên trên laptop** (cửa sổ rộng ≥ 900 px): thanh bên có Phiên điểm danh, Chiếu mã phòng, Duyệt khuôn mặt, Báo cáo.
+- **Quên mật khẩu quản trị**: `.\.venv\Scripts\python.exe -m app.cli reset-password --username admin` (in mật khẩu tạm mới).
+- **Dọn dữ liệu cũ**: `.\.venv\Scripts\python.exe -m app.jobs.cleanup` (trên VPS chạy bằng cron hằng ngày).
+
 ## 9. Lỗi thường gặp
 
 | Hiện tượng | Cách xử lý |

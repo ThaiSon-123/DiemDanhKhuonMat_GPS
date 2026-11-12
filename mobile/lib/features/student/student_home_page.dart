@@ -6,6 +6,7 @@ import '../../core/session.dart';
 import '../../ui/neo.dart';
 import '../../ui/neo_parts.dart';
 import '../../ui/theme.dart';
+import 'notices.dart';
 import 'student_nav.dart';
 
 /// Artboard "SV · Trang chủ" (SV_TrangChu.dc.html). Dữ liệu: GET /me, GET /me/classes.
@@ -21,6 +22,7 @@ class StudentHomePage extends StatefulWidget {
 class _StudentHomePageState extends State<StudentHomePage> {
   Map<String, dynamic>? _me;
   List<Map<String, dynamic>>? _classes;
+  List<Notice>? _notices;
   String? _error;
 
   @override
@@ -33,11 +35,12 @@ class _StudentHomePageState extends State<StudentHomePage> {
     setState(() => _error = null);
     try {
       final api = widget.session.api;
-      final r = await Future.wait([api.get('/me'), api.get('/me/classes')]);
+      final r = await Future.wait([api.get('/me'), api.get('/me/classes'), api.get('/me/attendance')]);
       if (!mounted) return;
       setState(() {
         _me = Map<String, dynamic>.from(r[0] as Map);
         _classes = [for (final c in r[1] as List) Map<String, dynamic>.from(c as Map)];
+        _notices = buildNotices(_me!, _classes!, [for (final a in r[2] as List) Map<String, dynamic>.from(a as Map)]);
       });
     } on ApiError catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -49,11 +52,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
     final me = _me;
     return PhoneShell(
       header: NeoHeader(label: 'Điểm danh', title: 'Trang chủ', trailing: [
-        HeaderTile(
-          tooltip: 'Thông báo',
-          onTap: () => comingSoon(context, 'Thông báo'),
-          child: const Icon(Icons.notifications_none, size: 21, color: AppColors.textSecondary),
-        ),
+        NoticeBell(notices: _notices),
         if (me != null)
           InitialsAvatar('${me['full_name']}', verified: me['face']?['status'] == 'approved'),
       ]),

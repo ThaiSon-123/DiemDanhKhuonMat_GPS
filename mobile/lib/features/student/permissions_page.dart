@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../ui/neo.dart';
 import '../../ui/neo_parts.dart';
@@ -28,7 +30,8 @@ const _texts = {
 };
 
 /// Artboard "SV · Quyền truy cập" (SV_QuyenTruyCap.dc.html), dùng lại cho camera, vị trí, Bluetooth.
-/// Chưa mở thẳng trang Cài đặt (cần thêm plugin); hiện hướng dẫn và nút thử lại.
+/// Điện thoại: nút chính mở trang cài đặt của ứng dụng, "Thử lại" sau khi bật quyền.
+/// Web không mở được cài đặt hệ thống nên nút chính là "Thử lại" (bật quyền ở biểu tượng ổ khóa).
 class PermissionsPage extends StatelessWidget {
   const PermissionsPage({super.key, required this.kind, required this.onRetry, required this.onLater});
   final PermissionKind kind;
@@ -45,7 +48,24 @@ class PermissionsPage extends StatelessWidget {
     ];
     return NeoPage(
       bottom: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        FilledButton.icon(onPressed: onRetry, icon: const Icon(Icons.refresh, size: 18), label: const Text('Thử lại')),
+        if (kIsWeb)
+          FilledButton.icon(onPressed: onRetry, icon: const Icon(Icons.refresh, size: 18), label: const Text('Thử lại'))
+        else ...[
+          FilledButton.icon(
+            onPressed: Geolocator.openAppSettings,
+            icon: const Icon(Icons.settings, size: 18),
+            label: const Text('Mở cài đặt'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48), foregroundColor: AppColors.text,
+                side: const BorderSide(color: AppColors.inputBorder),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Đã bật, thử lại', style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+        ],
         const SizedBox(height: 8),
         TextButton(
           style: TextButton.styleFrom(minimumSize: const Size.fromHeight(48), foregroundColor: AppColors.textSecondary),
